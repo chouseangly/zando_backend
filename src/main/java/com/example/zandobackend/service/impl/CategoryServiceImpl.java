@@ -6,7 +6,6 @@ import com.example.zandobackend.repository.CategoryRepo;
 import com.example.zandobackend.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Import this
 
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +18,6 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepo categoryRepo;
 
     @Override
-    @Transactional(readOnly = true)
     public List<CategoryDto> getCategoryTree() {
         List<Category> mainCategories = categoryRepo.findByParentIsNull();
         if (mainCategories.isEmpty()) {
