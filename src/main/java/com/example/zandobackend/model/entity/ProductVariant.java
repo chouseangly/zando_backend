@@ -2,15 +2,17 @@ package com.example.zandobackend.model.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class ProductVariant {
-    private Integer variantId;
-    private String uuid;
-    private Integer productId;
+    private Integer id;
+    private UUID uuid = UUID.randomUUID();
     private String color;
-    private List<ProductImage> images; // A variant can have multiple images
-    private List<VariantSize> availableSizes; // A variant can have multiple sizes
+    private Integer productId; // Foreign Key
+    private List<ProductImage> images = new ArrayList<>();
+    private List<VariantSize> variantSizes = new ArrayList<>();
 }

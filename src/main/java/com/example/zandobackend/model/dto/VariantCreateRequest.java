@@ -4,8 +4,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class VariantRequest {
+public class VariantCreateRequest {
     private String color;
-    private List<ImageRequest> images;
-    private List<SizeRequest> availableSizes;
+    private List<String> availableSizes;
 }

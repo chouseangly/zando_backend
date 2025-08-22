@@ -1,34 +1,29 @@
 package com.example.zandobackend.service.impl;
 
-import com.example.zandobackend.model.dto.ImageRequest;
-import com.example.zandobackend.model.dto.ProductRequest;
-import com.example.zandobackend.model.dto.SizeRequest;
-import com.example.zandobackend.model.dto.VariantRequest;
+
+
+import com.example.zandobackend.model.dto.ProductCreateRequest;
+import com.example.zandobackend.model.dto.ProductResponse;
+import com.example.zandobackend.model.dto.VariantCreateRequest;
 import com.example.zandobackend.model.entity.*;
 import com.example.zandobackend.repository.ProductRepo;
 import com.example.zandobackend.repository.SizeRepo;
 import com.example.zandobackend.service.ProductService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,111 +31,159 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepo productRepo;
     private final SizeRepo sizeRepo;
-    private final ModelMapper modelMapper = new ModelMapper();
+    private final RestTemplate restTemplate;
 
-    // 1. Inject Pinata keys directly into this class
-    @Value("${pinata.api.key}")
-    private String pinataApiKey;
+    @Value("${pinata.jwt}")
+    private String pinataJwt;
 
-    @Value("${pinata.secret.api.key}")
-    private String pinataSecretApiKey;
+    @Value("${pinata.api.base-url}")
+    private String pinataApiBaseUrl;
 
-    private static final String PINATA_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
-
-    @Override
-    public List<Product> findAllProducts() {
-        return productRepo.findAll();
-    }
-
-    @Override
-    public Optional<Product> findProductById(Integer id) {
-        return productRepo.findById(id);
-    }
-
+    private static final String PINATA_GATEWAY_URL = "https://gateway.pinata.cloud/ipfs/";
 
 
     @Transactional
-    @Override
-    public Product createProduct(ProductRequest productRequest, Map<String, MultipartFile> files) {
-        Product product = modelMapper.map(productRequest, Product.class);
+    public ProductResponse createProduct(ProductCreateRequest request, Map<String, MultipartFile[]> fileMap) {
+        Product product = new Product();
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setOriginalPrice(request.getOriginalPrice());
+        product.setDiscount(request.getDiscount());
         productRepo.insertProduct(product);
 
-        if (productRequest.getVariants() != null) {
-            for (VariantRequest variantReq : productRequest.getVariants()) {
-                ProductVariant variant = new ProductVariant();
-                variant.setProductId(product.getProductId());
-                variant.setColor(variantReq.getColor());
-                productRepo.insertVariant(variant);
+        Map<String, Size> sizeMap = new HashMap<>();
+        if (request.getAllSizes() != null) {
+            for (String sizeName : request.getAllSizes()) {
+                Size size = sizeRepo.findByName(sizeName).orElseGet(() -> {
+                    Size newSize = new Size(sizeName);
+                    sizeRepo.insertSize(newSize);
+                    return newSize;
+                });
+                sizeMap.put(sizeName, size);
+            }
+        }
 
-                if (variantReq.getImages() != null) {
-                    for (ImageRequest imageReq : variantReq.getImages()) {
-                        MultipartFile file = files.get(imageReq.getImageRef());
-                        if (file == null) {
-                            throw new RuntimeException("File not found for reference key: " + imageReq.getImageRef());
-                        }
+        for (VariantCreateRequest variantRequest : request.getVariants()) {
+            ProductVariant variant = new ProductVariant();
+            variant.setColor(variantRequest.getColor());
+            variant.setProductId(product.getId());
+            productRepo.insertProductVariant(variant);
 
-                        // 3. Call the internal private method to upload the file
-                        String imageUrl = uploadFileToPinata(file);
+            String fileMapKey = "files_" + variantRequest.getColor();
+            MultipartFile[] files = fileMap.getOrDefault(fileMapKey, new MultipartFile[0]);
+            if (files.length > 6) {
+                throw new IllegalArgumentException("Cannot upload more than 6 images for color: " + variantRequest.getColor());
+            }
 
-                        ProductImage image = new ProductImage();
-                        image.setVariantId(variant.getVariantId());
-                        image.setImageUrl(imageUrl);
-                        productRepo.insertImage(image);
-                    }
+            for (MultipartFile file : files) {
+                try {
+                    String imageUrl = uploadFileToPinata(file);
+                    ProductImage productImage = new ProductImage();
+                    productImage.setImageUrl(imageUrl);
+                    productImage.setVariantId(variant.getId());
+                    productRepo.insertProductImage(productImage);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to upload image: " + file.getOriginalFilename(), e);
                 }
+            }
 
-                if (variantReq.getAvailableSizes() != null) {
-                    for (SizeRequest sizeReq : variantReq.getAvailableSizes()) {
-                        Size size = sizeRepo.findByName(sizeReq.getName())
-                                .orElseThrow(() -> new RuntimeException("Size not found: " + sizeReq.getName()));
-
+            if (variantRequest.getAvailableSizes() != null) {
+                for (String availableSizeName : variantRequest.getAvailableSizes()) {
+                    Size size = sizeMap.get(availableSizeName);
+                    if (size != null) {
                         VariantSize variantSize = new VariantSize();
-                        variantSize.setVariantId(variant.getVariantId());
-                        variantSize.setSizeId(size.getSizeId());
-                        variantSize.setAvailable(sizeReq.isAvailable());
+                        variantSize.setVariantId(variant.getId());
+                        variantSize.setSizeId(size.getId());
+                        variantSize.setAvailable(true);
                         productRepo.insertVariantSize(variantSize);
                     }
                 }
             }
         }
-        return findProductById(product.getProductId())
-                .orElseThrow(() -> new RuntimeException("Failed to fetch newly created product"));
+        // In a real app, you would fetch the newly created product to build the response
+        // But for a POST response, returning a confirmation with the ID is often sufficient.
+        return ProductResponse.builder().id(product.getId()).name(product.getName()).build();
     }
 
-    // 2. The Pinata upload logic is now a private method inside this service
-    private String uploadFileToPinata(MultipartFile file) {
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost post = new HttpPost(PINATA_URL);
-            // Use the injected keys
-            post.setHeader("pinata_api_key", pinataApiKey);
-            post.setHeader("pinata_secret_api_key", pinataSecretApiKey);
+    @Override
+    public Map<String, ProductResponse> getAllProducts() {
+        List<Product> products = productRepo.findAllProducts();
 
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.addBinaryBody("file", file.getInputStream(), ContentType.DEFAULT_BINARY,
-                    UUID.randomUUID() + "_" + file.getOriginalFilename());
+        // Use a LinkedHashMap to preserve insertion order
+        return products.stream()
+                .map(this::mapToProductResponse) // Convert each Product POJO to a ProductResponse DTO
+                .collect(Collectors.toMap(
+                        response -> String.valueOf(response.getId()),
+                        response -> response,
+                        (oldValue, newValue) -> oldValue, // In case of duplicate keys, keep the old one
+                        LinkedHashMap::new
+                ));
+    }
 
-            HttpEntity entity = builder.build();
-            post.setEntity(entity);
+    // Helper method to convert the entity POJO to the response DTO
+    private ProductResponse mapToProductResponse(Product product) {
+        // Get all available sizes for this product
+        Set<String> availableSizesSet = product.getVariants().stream()
+                .flatMap(variant -> variant.getVariantSizes().stream())
+                .filter(VariantSize::isAvailable)
+                .map(vs -> vs.getSize().getName())
+                .collect(Collectors.toSet());
 
-            try (CloseableHttpResponse response = httpClient.execute(post)) {
-                String json = EntityUtils.toString(response.getEntity());
-                // The public gateway URL for the uploaded file
-                return "https://gateway.pinata.cloud/ipfs/" + new ObjectMapper().readTree(json).get("IpfsHash").asText();
+        // Get all possible sizes (assuming they are consistently stored across variants of a product)
+        Set<String> allSizesSet = product.getVariants().stream()
+                .flatMap(variant -> variant.getVariantSizes().stream())
+                .map(vs -> vs.getSize().getName())
+                .collect(Collectors.toSet());
+
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .originalPrice(product.getOriginalPrice())
+                .discount(product.getDiscount())
+                .availableSizes(new ArrayList<>(availableSizesSet))
+                .allSizes(new ArrayList<>(allSizesSet)) // This is a simplification; in reality, you might store this on the product table
+                .gallery(product.getVariants().stream().map(variant ->
+                        ProductResponse.GalleryResponse.builder()
+                                .color(variant.getColor())
+                                .images(variant.getImages().stream()
+                                        .map(ProductImage::getImageUrl)
+                                        .collect(Collectors.toList()))
+                                .build()
+                ).collect(Collectors.toList()))
+                .build();
+    }
+
+    // === PINATA UPLOAD LOGIC ===
+    private String uploadFileToPinata(MultipartFile file) throws IOException {
+        String url = pinataApiBaseUrl + "/pinning/pinFileToIPFS";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.setBearerAuth(pinataJwt.replace("Bearer ", ""));
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
+            @Override
+            public String getFilename() {
+                return file.getOriginalFilename();
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file to Pinata", e);
+        };
+        body.add("file", fileResource);
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.postForEntity(url, requestEntity, JsonNode.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                String ipfsHash = response.getBody().get("IpfsHash").asText();
+                return PINATA_GATEWAY_URL + ipfsHash;
+            } else {
+                throw new RuntimeException("Pinata API Error: " + response.getBody());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload to Pinata", e);
         }
-    }
-
-    @Transactional
-    @Override
-    public Product updateProduct(Integer id, ProductRequest productRequest, Map<String, MultipartFile> files) {
-        // Update logic would follow the same pattern, using the private uploadFileToPinata method
-        throw new UnsupportedOperationException("Update not yet implemented.");
-    }
-
-    @Override
-    public void deleteProductById(Integer id) {
-        productRepo.deleteById(id);
     }
 }

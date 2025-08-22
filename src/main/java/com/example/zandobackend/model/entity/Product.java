@@ -4,18 +4,20 @@ import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class Product {
-    private Integer productId;
-    private String uuid;
+    private Integer id;
+    private UUID uuid = UUID.randomUUID();
     private String name;
     private String description;
-    private BigDecimal basePrice;
-    private Integer discountPercent;
-    private BigDecimal finalPrice; // This is a generated column in the DB
-    private OffsetDateTime createdAt;
-    private List<ProductVariant> variants; // To hold the product's variants
+    private BigDecimal originalPrice;
+    private Integer discount;
+    private BigDecimal price; // This will be calculated by the database
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private List<ProductVariant> variants = new ArrayList<>();
 }
