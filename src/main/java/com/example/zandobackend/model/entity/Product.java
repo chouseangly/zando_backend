@@ -1,23 +1,17 @@
 package com.example.zandobackend.model.entity;
 
-import lombok.Getter;
-import lombok.Setter;
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import lombok.Data;
 import java.util.List;
-import java.util.UUID;
 
-@Getter
-@Setter
+@Data
 public class Product {
-    private Integer id;
-    private UUID uuid = UUID.randomUUID();
+    private Long productId;
+    private String uuid;
     private String name;
     private String description;
-    private BigDecimal originalPrice;
-    private Integer discount;
-    private BigDecimal price; // This will be calculated by the database
-    private OffsetDateTime createdAt = OffsetDateTime.now();
-    private List<ProductVariant> variants = new ArrayList<>();
+    private Double basePrice; // original price
+    private Integer discountPercent;
+    private List<ProductVariant> variants; // includes color, images, sizes
+    private List<String> allSizes; // static or fetched from DB: ["S", "M", "L", "XL", "XXL"]
 }
+

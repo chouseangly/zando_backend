@@ -5,28 +5,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.math.BigDecimal;
 import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductResponse {
-    private Integer id;
+    private Long id;
     private String name;
-    private String description;
-    private BigDecimal price; // Final price
-    private BigDecimal originalPrice;
+    private Double price;          // final price
+    private Double originalPrice;  // base price
     private Integer discount;
-    private List<String> allSizes;
-    private List<String> availableSizes;
     private List<GalleryResponse> gallery;
+    private List<String> availableSizes; // sizes available for this product
+    private List<String> allSizes;       // all possible sizes
+    private String description;
 
     @Data
     @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class GalleryResponse {
         private String color;
         private List<String> images;
