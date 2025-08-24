@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -48,13 +49,15 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setDiscountPercent(request.getDiscountPercent());
-        product.setAllSizes(request.getAllSizes()); // <-- set allSizes from request
+        product.setAllSizes(request.getAllSizes());
 
+        // --- FIX: Insert the product into the database FIRST ---
+        productRepo.insertProduct(product);
 
-        int imageIndex = 0;
+        int imageIndex = 0; // This will keep track of our position in the images list
 
         for (CreateProductRequest.VariantRequest variantReq : request.getVariants()) {
-            // Insert variant
+            // ... (variant and size insertion logic remains the same) ...
             var variantDTO = new com.example.zandobackend.model.dto.VariantInsertDTO();
             variantDTO.setProductId(product.getProductId());
             variantDTO.setColor(variantReq.getColor());
@@ -62,15 +65,23 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
 
             Long variantId = variantDTO.getVariantId();
 
-            // Insert sizes
+            // ... (size insertion logic remains the same) ...
             for (String size : variantReq.getSizes()) {
                 Long sizeId = productRepo.getSizeIdByName(size);
-                if (sizeId == null) sizeId = productRepo.insertSize(size);
+                if (sizeId == null) {
+                    Map<String, Object> params = new java.util.HashMap<>();
+                    params.put("name", size);
+                    productRepo.insertSize(params);
+                    sizeId = ((Number) params.get("size_id")).longValue();
+                }
                 productRepo.insertVariantSize(variantId, sizeId);
             }
 
-            // Upload images
-            for (int i = 0; i < 5 && imageIndex < images.size(); i++) {
+
+            // --- NEW IMAGE UPLOAD LOGIC ---
+            // This loop now processes exactly 'imageCount' images for the current variant.
+            int imagesToUpload = variantReq.getImageCount();
+            for (int i = 0; i < imagesToUpload && imageIndex < images.size(); i++) {
                 String url = uploadToPinata(images.get(imageIndex++));
                 productRepo.insertImage(variantId, url);
             }
@@ -81,7 +92,6 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
 
         return mapToProductResponse(savedProduct);
     }
-
     @Override
     public ProductResponse getProductResponse(Long id) {
         Product product = getProduct(id);
@@ -94,12 +104,14 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
     }
 
     // --- Helper methods ---
+    // --- Helper methods ---
     private Product getProduct(Long id) {
         Product product = productRepo.selectProductById(id);
         List<ProductVariant> variants = productRepo.selectVariantsByProductId(id);
         for (ProductVariant variant : variants) {
-            variant.setImages(productRepo.selectImagesByVariantId(Long.valueOf(variant.getColor().hashCode()))); // assuming variantId replaced with hash
-            variant.setSizes(productRepo.selectSizesByVariantId(Long.valueOf(variant.getColor().hashCode())));
+            // --- FIX THESE TWO LINES ---
+            variant.setImages(productRepo.selectImagesByVariantId(variant.getVariantId()));
+            variant.setSizes(productRepo.selectSizesByVariantId(variant.getVariantId()));
         }
         product.setVariants(variants);
         return product;
@@ -153,7 +165,7 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
 
             try (CloseableHttpResponse response = client.execute(post)) {
                 String resp = EntityUtils.toString(response.getEntity());
-                return "https://gateway.pinata.cloud/ipfs/" +
+                return "https://maroon-fantastic-crab-577.mypinata.cloud/ipfs/" +
                         mapper.readTree(resp).get("IpfsHash").asText();
             }
         }

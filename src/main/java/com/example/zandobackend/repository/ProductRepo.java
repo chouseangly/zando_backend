@@ -6,6 +6,7 @@ import com.example.zandobackend.model.entity.ProductVariant;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface ProductRepo {
@@ -40,8 +41,9 @@ public interface ProductRepo {
     @Select("SELECT size_id FROM size WHERE name = #{name}")
     Long getSizeIdByName(@Param("name") String name);
 
-    @Insert("INSERT INTO size(name) VALUES(#{name}) RETURNING size_id")
-    Long insertSize(@Param("name") String name);
+    @Insert("INSERT INTO size(name) VALUES(#{name})")
+    @Options(useGeneratedKeys = true, keyProperty = "size_id", keyColumn = "size_id")
+    void insertSize(Map<String, Object> params);
 
     // ------------------ Variant Size ------------------
 

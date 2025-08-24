@@ -270,3 +270,4 @@ INSERT INTO category (name, parent_id) VALUES
                                            ('Shoes', 10),
                                            ('Accessories', 10),
                                            ('Shop by collection', 10);
+truncate table product_variant restart identity cascade ;
