@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,8 +50,6 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setDiscountPercent(request.getDiscountPercent());
-        product.setAllSizes(request.getAllSizes());
-
         // --- FIX: Insert the product into the database FIRST ---
         productRepo.insertProduct(product);
 
@@ -98,6 +97,19 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
         return mapToProductResponse(product);
     }
 
+    // In ProductServiceImpl.java
+
+    @Override
+    public List<ProductResponse> getAllProducts() {
+        // 1. Get the list of basic product ENTITIES from the repository.
+        List<Product> products = productRepo.selectAllProducts();
+
+        // 2. For each product, use your existing getProductResponse method
+        //    to fully load all its data and map it to the final response object.
+        return products.stream()
+                .map(product -> getProductResponse(product.getProductId()))
+                .collect(Collectors.toList());
+    }
     @Override
     public List<CreateProductRequest.VariantRequest> parseVariants(String variantsJson) throws IOException {
         return mapper.readValue(variantsJson, new TypeReference<List<CreateProductRequest.VariantRequest>>() {});
@@ -148,7 +160,6 @@ public class ProductServiceImpl implements com.example.zandobackend.service.Prod
                                 .build())
                         .toList())
                 .availableSizes(availableSizes)
-                .allSizes(product.getAllSizes()) // <-- now populated
                 .description(product.getDescription())
                 .build();
     }

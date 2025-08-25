@@ -17,4 +17,7 @@ public interface ProductService {
     List<CreateProductRequest.VariantRequest> parseVariants(String variantsJson) throws IOException;
 
     ProductResponse getProductResponse(Long id);
+
+
+    List<ProductResponse> getAllProducts();
 }

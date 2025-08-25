@@ -17,8 +17,7 @@ public class ProductResponse {
     private Double originalPrice;  // base price
     private Integer discount;
     private List<GalleryResponse> gallery;
-    private List<String> availableSizes; // sizes available for this product
-    private List<String> allSizes;       // all possible sizes
+    private List<String> availableSizes;
     private String description;
 
     @Data

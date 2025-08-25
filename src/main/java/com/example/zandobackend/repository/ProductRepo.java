@@ -1,10 +1,13 @@
 package com.example.zandobackend.repository;
 
+import com.example.zandobackend.model.dto.ProductResponse;
 import com.example.zandobackend.model.dto.VariantInsertDTO;
 import com.example.zandobackend.model.entity.Product;
 import com.example.zandobackend.model.entity.ProductVariant;
 import org.apache.ibatis.annotations.*;
 
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -62,4 +65,14 @@ public interface ProductRepo {
 
     @Select("SELECT image_url FROM product_image WHERE variant_id = #{variantId}")
     List<String> selectImagesByVariantId(@Param("variantId") Long variantId);
+
+    // In ProductRepo.java
+
+    @Select("SELECT * FROM product")
+    @Results({
+            @Result(property = "productId",       column = "product_id"),
+            @Result(property = "basePrice",       column = "base_price"),
+            @Result(property = "discountPercent", column = "discount_percent")
+    })
+    List<Product> selectAllProducts(); // <-- Return the Product entity, NOT ProductResponse
 }

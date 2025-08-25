@@ -1,6 +1,7 @@
 package com.example.zandobackend.model.entity;
 
 import lombok.Data;
+import java.util.ArrayList; // <-- Make sure this import is added
 import java.util.List;
 
 @Data
@@ -9,9 +10,7 @@ public class Product {
     private String uuid;
     private String name;
     private String description;
-    private Double basePrice; // original price
+    private Double basePrice;
     private Integer discountPercent;
-    private List<ProductVariant> variants; // includes color, images, sizes
-    private List<String> allSizes; // static or fetched from DB: ["S", "M", "L", "XL", "XXL"]
+    private List<ProductVariant> variants = new ArrayList<>();
 }
-

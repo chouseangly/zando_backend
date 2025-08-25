@@ -27,6 +27,7 @@ CREATE TABLE product (
                          final_price NUMERIC(10, 2) GENERATED ALWAYS AS (base_price * (1 - discount_percent / 100.0)) STORED,
                          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+drop table product cascade ;
 
 -- ## Size Table ##
 -- Stores available product sizes.
@@ -270,4 +271,4 @@ INSERT INTO category (name, parent_id) VALUES
                                            ('Shoes', 10),
                                            ('Accessories', 10),
                                            ('Shop by collection', 10);
-truncate table product_variant restart identity cascade ;
+truncate table size , product,product_variant,product_image restart identity cascade ;
