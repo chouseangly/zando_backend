@@ -1,13 +1,10 @@
 package com.example.zandobackend.repository;
 
-import com.example.zandobackend.model.dto.ProductResponse;
 import com.example.zandobackend.model.dto.VariantInsertDTO;
 import com.example.zandobackend.model.entity.Product;
 import com.example.zandobackend.model.entity.ProductVariant;
 import org.apache.ibatis.annotations.*;
 
-
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -24,20 +21,37 @@ public interface ProductRepo {
     @Select("SELECT * FROM product WHERE product_id = #{productId}")
     Product selectProductById(@Param("productId") Long productId);
 
+    @Select("SELECT * FROM product")
+    @Results({
+            @Result(property = "productId",       column = "product_id"),
+            @Result(property = "basePrice",       column = "base_price"),
+            @Result(property = "discountPercent", column = "discount_percent")
+    })
+    List<Product> selectAllProducts();
+
+    @Update("UPDATE product SET " +
+            "name = #{name}, " +
+            "description = #{description}, " +
+            "base_price = #{basePrice}, " +
+            "discount_percent = #{discountPercent} " +
+            "WHERE product_id = #{productId}")
+    void updateProduct(Product product);
+
+    @Delete("DELETE FROM product WHERE product_id = #{productId}")
+    void deleteProductById(@Param("productId") Long productId);
+
+
     // ------------------ Variant ------------------
 
     @Insert("INSERT INTO product_variant(product_id, color) VALUES(#{productId}, #{color})")
     @Options(useGeneratedKeys = true, keyProperty = "variantId")
     void insertVariant(VariantInsertDTO variant);
 
-
-
-
     @Select("SELECT variant_id, product_id, color, uuid FROM product_variant WHERE product_id = #{productId}")
     List<ProductVariant> selectVariantsByProductId(@Param("productId") Long productId);
 
-    @Select("SELECT variant_id FROM product_variant ORDER BY variant_id DESC LIMIT 1")
-    Long getLastInsertedVariantId();
+    @Delete("DELETE FROM product_variant WHERE product_id = #{productId}")
+    void deleteVariantsByProductId(@Param("productId") Long productId);
 
     // ------------------ Size ------------------
 
@@ -66,13 +80,4 @@ public interface ProductRepo {
     @Select("SELECT image_url FROM product_image WHERE variant_id = #{variantId}")
     List<String> selectImagesByVariantId(@Param("variantId") Long variantId);
 
-    // In ProductRepo.java
-
-    @Select("SELECT * FROM product")
-    @Results({
-            @Result(property = "productId",       column = "product_id"),
-            @Result(property = "basePrice",       column = "base_price"),
-            @Result(property = "discountPercent", column = "discount_percent")
-    })
-    List<Product> selectAllProducts(); // <-- Return the Product entity, NOT ProductResponse
 }
