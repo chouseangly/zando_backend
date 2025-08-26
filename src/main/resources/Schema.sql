@@ -172,20 +172,6 @@ CREATE TABLE category (
                                   ON DELETE CASCADE -- If a parent is deleted, its children are also deleted
 );
 
--- Next, create a table to link products to categories (Many-to-Many)
-CREATE TABLE product_category (
-                                  product_id INT NOT NULL,
-                                  category_id INT NOT NULL,
-                                  PRIMARY KEY (product_id, category_id), -- Ensures a product isn't in the same category twice
-                                  CONSTRAINT fk_product
-                                      FOREIGN KEY(product_id)
-                                          REFERENCES product(product_id)
-                                          ON DELETE CASCADE,
-                                  CONSTRAINT fk_category
-                                      FOREIGN KEY(category_id)
-                                          REFERENCES category(category_id)
-                                          ON DELETE CASCADE
-);
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.
 
@@ -272,3 +258,4 @@ INSERT INTO category (name, parent_id) VALUES
                                            ('Accessories', 10),
                                            ('Shop by collection', 10);
 truncate table size , product,product_variant,product_image restart identity cascade ;
+DROP TABLE IF EXISTS product_category, category, favorite, order_item, "order", variant_size, product_image, product_variant, size, product, "user" CASCADE;
