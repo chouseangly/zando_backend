@@ -24,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,7 +47,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                                          MultipartFile profileImage, MultipartFile coverImage) throws IOException {
 
         String profileImagePath = uploadFileToPinata(profileImage);
-        String coverImagePath = uploadFileToPinata(coverImage);
+
 
         UserProfileRequest request = new UserProfileRequest();
         request.setUserId(userId);
@@ -70,8 +69,8 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     public UserProfile updateUserProfileWithImage(Long userId, String gender, String phoneNumber,
                                                   LocalDate birthday, String address, String telegramUrl,
-                                                  String slogan, String userName, String firstName, String lastName,
-                                                  MultipartFile profileImage, MultipartFile coverImage) throws IOException {
+                                                  String slogan, String userName,
+                                                  MultipartFile profileImage) throws IOException {
 
         UserProfile existing = userProfileRepo.getProfileByUserId(userId);
         if (existing == null) return null;
