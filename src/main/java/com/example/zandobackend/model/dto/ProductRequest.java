@@ -15,6 +15,7 @@ public class ProductRequest {
     private Integer discountPercent;
     private List<VariantRequest> variants;
     private List<String> allSizes;
+    private List<Integer> categoryIds; // <-- ADD THIS LINE
 
     @Data
     public static class VariantRequest {

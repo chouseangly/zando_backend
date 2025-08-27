@@ -18,6 +18,7 @@ public class ProductResponse {
     private Integer discount;
     private List<GalleryResponse> gallery;
     private String description;
+    private List<CategoryDto> categories; // <-- ADD THIS LINE
 
     @Data
     @Builder

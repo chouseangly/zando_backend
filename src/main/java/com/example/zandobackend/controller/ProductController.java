@@ -30,7 +30,8 @@ public class ProductController {
             @RequestParam("basePrice") Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
             @RequestParam("variants") String variantsJson,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds // <-- ADD THIS LINE
     ) throws IOException {
 
         // Build request DTO from request parts
@@ -40,6 +41,7 @@ public class ProductController {
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
         request.setVariants(productService.parseVariants(variantsJson));
+        request.setCategoryIds(categoryIds); // <-- ADD THIS LINE
 
         ProductResponse response = productService.createProduct(request, images);
 
@@ -99,7 +101,8 @@ public class ProductController {
             @RequestParam(value = "basePrice",required = false) Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
             @RequestParam(value = "variants",required = false) String variantsJson,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds // <-- ADD THIS LINE
     ) throws IOException {
 
         // Build request DTO
@@ -109,6 +112,7 @@ public class ProductController {
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
         request.setVariants(productService.parseVariants(variantsJson));
+        request.setCategoryIds(categoryIds); // <-- ADD THIS LINE
 
         // FIX: Passed the 'id' to the service method
         ProductResponse response = productService.updateProduct(id, request, images);
@@ -125,9 +129,20 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> deleteProduct(@PathVariable Long id) {
         ProductResponse response = productService.deleteProduct(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
+        return ResponseEntity.ok(
                 new ApiResponse<>("delete successfully", response, HttpStatus.OK.value(), LocalDateTime.now())
         );
 
+    }
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByCategory(@PathVariable Integer categoryId) {
+        List<ProductResponse> responses = productService.getProductsByCategoryId(categoryId);
+        ApiResponse<List<ProductResponse>> apiResponse = new ApiResponse<>(
+                "Products for category " + categoryId + " retrieved successfully",
+                responses,
+                HttpStatus.OK.value(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.ok(apiResponse);
     }
 }

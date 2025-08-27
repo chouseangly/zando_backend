@@ -3,7 +3,7 @@
 
 -- ## Users Table ##
 -- Stores user account information.
-CREATE TABLE "user" (
+CREATE TABLE users (
                         user_id SERIAL PRIMARY KEY,
                         uuid UUID DEFAULT gen_random_uuid() NOT NULL,
                         user_name VARCHAR(255) UNIQUE NOT NULL,
@@ -13,6 +13,16 @@ CREATE TABLE "user" (
                         password VARCHAR(255) NOT NULL,
                         role VARCHAR(50) DEFAULT 'user' NOT NULL,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_profile (
+                              profile_id SERIAL PRIMARY KEY,
+                              user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE UNIQUE,
+                              birthday DATE,
+                              gender VARCHAR(10),
+                              phone_number VARCHAR(20),
+                              profile_image TEXT,
+                              address TEXT
 );
 
 -- ## Products Table ##
@@ -84,7 +94,7 @@ CREATE TABLE variant_size (
 
 -- ## Orders Table ##
 -- Stores customer order information.
-CREATE TABLE "order" (
+CREATE TABLE orders (
                          order_id SERIAL PRIMARY KEY,
                          uuid UUID DEFAULT gen_random_uuid() NOT NULL,
                          user_id INT NOT NULL,
@@ -93,7 +103,7 @@ CREATE TABLE "order" (
                          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                          CONSTRAINT fk_user
                              FOREIGN KEY(user_id)
-                                 REFERENCES "user"(user_id)
+                                 REFERENCES users(user_id)
                                  ON DELETE CASCADE
 );
 
@@ -110,7 +120,7 @@ CREATE TABLE order_item (
                             price NUMERIC(10, 2) NOT NULL,
                             CONSTRAINT fk_order
                                 FOREIGN KEY(order_id)
-                                    REFERENCES "order"(order_id)
+                                    REFERENCES orders(order_id)
                                     ON DELETE CASCADE,
                             CONSTRAINT fk_product
                                 FOREIGN KEY(product_id)
@@ -136,7 +146,7 @@ CREATE TABLE favorite (
                           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                           CONSTRAINT fk_user
                               FOREIGN KEY(user_id)
-                                  REFERENCES "user"(user_id)
+                                  REFERENCES users(user_id)
                                   ON DELETE CASCADE,
                           CONSTRAINT fk_product
                               FOREIGN KEY(product_id)
@@ -172,90 +182,196 @@ CREATE TABLE category (
                                   ON DELETE CASCADE -- If a parent is deleted, its children are also deleted
 );
 
+-- ## Product Category Table (Bridge Table) ##
+-- Links products to categories (many-to-many).
+CREATE TABLE product_category (
+                                  product_id INT NOT NULL,
+                                  category_id INT NOT NULL,
+                                  PRIMARY KEY (product_id, category_id), -- Ensures a product is in a category only once
+                                  CONSTRAINT fk_product
+                                      FOREIGN KEY(product_id)
+                                          REFERENCES product(product_id)
+                                          ON DELETE CASCADE,
+                                  CONSTRAINT fk_category
+                                      FOREIGN KEY(category_id)
+                                          REFERENCES category(category_id)
+                                          ON DELETE CASCADE
+);
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.
+-- This script clears and populates the category table based on the menu structure in the provided images.
 
--- 1. Insert Main Categories
+-- 1. Clear all existing data from the category table to start fresh.
+TRUNCATE TABLE category RESTART IDENTITY CASCADE;
+
+-- 2. Insert the four main, top-level categories. Their parent_id is NULL.
 INSERT INTO category (name, parent_id) VALUES
-                                           ('Women', NULL),      -- Assumes ID will be 1
-                                           ('Men', NULL),        -- Assumes ID will be 2
-                                           ('Boys', NULL),       -- Assumes ID will be 3
-                                           ('Girls', NULL);      -- Assumes ID will be 4
+                                           ('Women', NULL),      -- ID will be 1
+                                           ('Men', NULL),        -- ID will be 2
+                                           ('Boys', NULL),       -- ID will be 3
+                                           ('Girls', NULL);      -- ID will be 4
 
--- 2. Insert Level 2 Categories (Sub-categories of 'Women', whose ID is 1)
+--------------------------------------------------------------------------------
+-- 3. INSERT CATEGORIES FOR 'WOMEN' (Parent ID: 1)
+--------------------------------------------------------------------------------
+-- Level 2 sub-categories for 'Women'
 INSERT INTO category (name, parent_id) VALUES
-                                           ('New In', 1),        -- Assumes ID will be 5
-                                           ('Clothing', 1),      -- Assumes ID will be 6
-                                           ('Shoes', 1),         -- Assumes ID will be 7
-                                           ('Accessories', 1),   -- Assumes ID will be 8
-                                           ('Shop by collection', 1), -- Assumes ID will be 9
-                                           ('SALE', 1);          -- Assumes ID will be 10
+                                           ('New In', 1),            -- ID: 5
+                                           ('Clothing', 1),          -- ID: 6
+                                           ('Shoes', 1),             -- ID: 7
+                                           ('Accessories', 1),       -- ID: 8
+                                           ('Shop by collection', 1),-- ID: 9
+                                           ('SALE', 1);              -- ID: 10
 
--- 3. Insert Level 3 Categories (Sub-sub-categories)
-
--- Sub-categories of 'New In' (Parent ID: 5)
+-- Level 3 sub-categories for 'Women' -> 'New In' (Parent ID: 5)
 INSERT INTO category (name, parent_id) VALUES
-                                           ('All', 5),
-                                           ('Lifestyle', 5),
-                                           ('Casual', 5),
-                                           ('Sportlife', 5),
-                                           ('New In Top', 5),
-                                           ('New In Dress', 5),
-                                           ('New In Bottom', 5);
+                                           ('All', 5), ('Casual', 5), ('Sportlife', 5), ('New In Top', 5), ('New In Dress', 5), ('New In Bottom', 5);
 
--- Sub-categories of 'Clothing' (Parent ID: 6)
+-- Level 3 sub-categories for 'Women' -> 'Clothing' (Parent ID: 6)
 INSERT INTO category (name, parent_id) VALUES
-                                           ('All', 6),
-                                           ('Tops', 6),
-                                           ('Blazers', 6),
-                                           ('Vest', 6),
-                                           ('Bras', 6),
-                                           ('Shirts', 6),
-                                           ('T-Shirts', 6),
-                                           ('Jackets', 6),
-                                           ('Polo Shirts', 6),
-                                           ('Hoodies & Sweatshirts', 6),
-                                           ('Jumpsuits', 6),
-                                           ('Dresses', 6),
-                                           ('Cardigans', 6),
-                                           ('Blouses', 6),
-                                           ('Sportswear', 6),
-                                           ('Trousers', 6),
-                                           ('Jeans', 6),
-                                           ('Skirts', 6),
-                                           ('Shorts', 6);
+                                           ('All', 6), ('Tops', 6), ('Blazers', 6), ('Vest', 6), ('Bras', 6), ('Shirts', 6), ('T-Shirts', 6), ('Jackets', 6), ('Polo Shirts', 6), ('Hoodies & Sweatshirts', 6), ('Jumpsuits', 6), ('Dresses', 6), ('Cardigans', 6), ('Blouses', 6), ('Sportswear', 6), ('Trousers', 6), ('Jeans', 6), ('Skirts', 6), ('Shorts', 6);
 
--- Sub-categories of 'Shoes' (Parent ID: 7)
+-- Level 3 sub-categories for 'Women' -> 'Shoes' (Parent ID: 7)
 INSERT INTO category (name, parent_id) VALUES
-                                           ('All', 7),
-                                           ('Loafers', 7),
-                                           ('Sandals', 7),
-                                           ('Sneakers', 7);
+                                           ('All', 7), ('Sneakers', 7), ('Sandals', 7), ('Loafers', 7);
 
--- Sub-categories of 'Accessories' (Parent ID: 8)
+-- Level 3 sub-categories for 'Women' -> 'Accessories' (Parent ID: 8)
 INSERT INTO category (name, parent_id) VALUES
-                                           ('All', 8),
-                                           ('Bows', 8),
-                                           ('Bags', 8),
-                                           ('Socks', 8),
-                                           ('Caps & Hats', 8),
-                                           ('Backpacks', 8),
-                                           ('Belts', 8),
-                                           ('UnderWear', 8),
-                                           ('Gloves', 8),
-                                           ('Sport Equipment', 8);
+                                           ('All', 8), ('Backpacks', 8), ('Bags', 8), ('Belts', 8), ('Caps & Hats', 8), ('Socks', 8), ('Gloves', 8), ('Bows', 8), ('UnderWear', 8), ('Sport Equipment', 8);
 
--- Sub-categories of 'Shop by collection' (Parent ID: 9)
+-- Level 3 sub-categories for 'Women' -> 'Shop by collection' (Parent ID: 9)
 INSERT INTO category (name, parent_id) VALUES
-                                           ('All', 9),
-                                           ('Coffee Lover Series 5', 9),
-                                           ('Women Denim', 9);
+                                           ('All', 9), ('Coffee Lover Series 5', 9), ('Women Denim', 9);
 
--- Sub-categories of 'SALE' (Parent ID: 10)
+-- Level 3 sub-categories for 'Women' -> 'SALE' (Parent ID: 10)
 INSERT INTO category (name, parent_id) VALUES
-                                           ('Clothing', 10),
-                                           ('Shoes', 10),
-                                           ('Accessories', 10),
-                                           ('Shop by collection', 10);
+                                           ('Clothing', 10), ('Shoes', 10), ('Accessories', 10), ('Shop by collection', 10);
+
+--------------------------------------------------------------------------------
+-- 4. INSERT CATEGORIES FOR 'MEN' (Parent ID: 2)
+--------------------------------------------------------------------------------
+-- Level 2 sub-categories for 'Men'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('New In', 2), ('Clothing', 2), ('Shoes', 2), ('Accessories', 2), ('Shop by collection', 2), ('SALE', 2);
+
+-- Level 3 sub-categories for 'Men' -> 'New In'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'New In' AND parent_id = 2)),
+                                           ('Lifestyle', (SELECT category_id FROM category WHERE name = 'New In' AND parent_id = 2)),
+                                           ('Casual', (SELECT category_id FROM category WHERE name = 'New In' AND parent_id = 2)),
+                                           ('New In Top', (SELECT category_id FROM category WHERE name = 'New In' AND parent_id = 2)),
+                                           ('New In Bottom', (SELECT category_id FROM category WHERE name = 'New In' AND parent_id = 2));
+
+-- Level 3 sub-categories for 'Men' -> 'Clothing'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Blazers', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Vest', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Polo Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('T-Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Jackets', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Hoodies & Sweatshirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Cardigans', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Sportswear', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Trousers', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Jeans', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Shorts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2)),
+                                           ('Boxers', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 2));
+
+-- Level 3 sub-categories for 'Men' -> 'Shoes'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 2)),
+                                           ('Sandals', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 2)),
+                                           ('Sneakers', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 2));
+
+-- Level 3 sub-categories for 'Men' -> 'Accessories'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Caps & Hats', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Bags', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Socks', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Belts', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Gloves', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Wallet', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2)),
+                                           ('Backpacks', (SELECT category_id FROM category WHERE name = 'Accessories' AND parent_id = 2));
+
+-- Level 3 sub-categories for 'Men' -> 'Shop by collection'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Shop by collection' AND parent_id = 2)),
+                                           ('Coffee Lover Series 5', (SELECT category_id FROM category WHERE name = 'Shop by collection' AND parent_id = 2)),
+                                           ('Men Denim', (SELECT category_id FROM category WHERE name = 'Shop by collection' AND parent_id = 2));
+
+-- Level 3 sub-categories for 'Men' -> 'SALE'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('Clothing', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 2)),
+                                           ('Shoes', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 2)),
+                                           ('Accessories', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 2)),
+                                           ('Shop by collection', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 2));
+
+--------------------------------------------------------------------------------
+-- 5. INSERT CATEGORIES FOR 'BOYS' (Parent ID: 3)
+--------------------------------------------------------------------------------
+-- Level 2 sub-categories for 'Boys'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('New In', 3), ('Clothing', 3), ('Shoes', 3), ('SALE', 3);
+
+-- Level 3 sub-categories for 'Boys' -> 'Clothing'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3)),
+                                           ('Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3)),
+                                           ('T-Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3)),
+                                           ('Jackets', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3)),
+                                           ('Clothing Sets', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3)),
+                                           ('Trousers', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3)),
+                                           ('Shorts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 3));
+
+-- Level 3 sub-categories for 'Boys' -> 'Shoes'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 3)),
+                                           ('Sneakers', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 3)),
+                                           ('Sandals', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 3));
+
+-- Level 3 sub-categories for 'Boys' -> 'SALE'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('New In', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 3)),
+                                           ('Clothing', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 3)),
+                                           ('Shoes', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 3));
+
+--------------------------------------------------------------------------------
+-- 6. INSERT CATEGORIES FOR 'GIRLS' (Parent ID: 4)
+--------------------------------------------------------------------------------
+-- Level 2 sub-categories for 'Girls'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('New In', 4), ('Clothing', 4), ('Accessories', 4), ('Shoes', 4), ('SALE', 4);
+
+-- Level 3 sub-categories for 'Girls' -> 'Clothing'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4)),
+                                           ('Jeans', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4)),
+                                           ('Cardigan', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4)),
+                                           ('Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4)),
+                                           ('T-Shirts', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4)),
+                                           ('Dresses', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4)),
+                                           ('Trousers', (SELECT category_id FROM category WHERE name = 'Clothing' AND parent_id = 4));
+
+-- Level 3 sub-categories for 'Girls' -> 'Shoes'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('All', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 4)),
+                                           ('Sandals', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 4)),
+                                           ('Sneakers', (SELECT category_id FROM category WHERE name = 'Shoes' AND parent_id = 4));
+
+-- Level 3 sub-categories for 'Girls' -> 'SALE'
+INSERT INTO category (name, parent_id) VALUES
+                                           ('New In', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 4)),
+                                           ('Clothing', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 4)),
+                                           ('Accessories', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 4)),
+                                           ('Shoes', (SELECT category_id FROM category WHERE name = 'SALE' AND parent_id = 4));
+
+
+
+
+
+delete from category where category_id = 18;
 truncate table size , product,product_variant,product_image restart identity cascade ;
-DROP TABLE IF EXISTS product_category, category, favorite, order_item, "order", variant_size, product_image, product_variant, size, product, "user" CASCADE;
+DROP TABLE IF EXISTS order_item CASCADE;

@@ -1,8 +1,10 @@
 package com.example.zandobackend.service.impl;
 
+import com.example.zandobackend.model.dto.CategoryDto;
 import com.example.zandobackend.model.dto.ProductRequest;
 import com.example.zandobackend.model.dto.ProductResponse;
 import com.example.zandobackend.model.dto.VariantInsertDTO;
+import com.example.zandobackend.model.entity.Category;
 import com.example.zandobackend.model.entity.Product;
 import com.example.zandobackend.model.entity.ProductVariant;
 import com.example.zandobackend.repository.ProductRepo;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +58,13 @@ public class ProductServiceImpl implements ProductService {
 
         productRepo.insertProduct(product); // Insert to get the new product ID
 
+        // Link categories to the product
+        if (request.getCategoryIds() != null) {
+            for (Integer categoryId : request.getCategoryIds()) {
+                productRepo.insertProductCategory(product.getProductId(), categoryId);
+            }
+        }
+
         // Process variants, sizes, and images
         processVariantsAndImages(product.getProductId(), request.getVariants(), images);
 
@@ -79,13 +89,21 @@ public class ProductServiceImpl implements ProductService {
         productToUpdate.setDiscountPercent(request.getDiscountPercent());
         productRepo.updateProduct(productToUpdate);
 
-        // 3. Delete all old variants, which will cascade delete images and size links
+        // 3. Update categories: delete old and insert new
+        productRepo.deleteProductCategoriesByProductId(id);
+        if (request.getCategoryIds() != null) {
+            for (Integer categoryId : request.getCategoryIds()) {
+                productRepo.insertProductCategory(id, categoryId);
+            }
+        }
+
+        // 4. Delete all old variants, which will cascade delete images and size links
         productRepo.deleteVariantsByProductId(id);
 
-        // 4. Create the new variants, sizes, and images from the request
+        // 5. Create the new variants, sizes, and images from the request
         processVariantsAndImages(id, request.getVariants(), images);
 
-        // 5. Fetch the updated product and return the response
+        // 6. Fetch the updated product and return the response
         return getProductResponse(id);
     }
 
@@ -106,6 +124,16 @@ public class ProductServiceImpl implements ProductService {
         // 4. Return the response object you saved earlier.
         return productToDelete;
     }
+
+    @Override
+    public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
+        List<Product> products = productRepo.selectProductsByCategoryId(categoryId);
+        return products.stream()
+                .map(product -> getProductResponse(product.getProductId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public ProductResponse getProductResponse(Long id) {
@@ -137,6 +165,7 @@ public class ProductServiceImpl implements ProductService {
         if (product == null) {
             return null;
         }
+        product.setCategories(productRepo.selectCategoriesByProductId(id)); // This will now fetch children
         List<ProductVariant> variants = productRepo.selectVariantsByProductId(id);
         for (ProductVariant variant : variants) {
             variant.setImages(productRepo.selectImagesByVariantId(variant.getVariantId()));
@@ -153,6 +182,8 @@ public class ProductServiceImpl implements ProductService {
     private void processVariantsAndImages(Long productId, List<ProductRequest.VariantRequest> variantRequests, List<MultipartFile> images) throws IOException {
         int imageIndex = 0; // Tracks the current position in the flattened list of all images
 
+        if (variantRequests == null) return; // Add null check for safety
+
         for (ProductRequest.VariantRequest variantReq : variantRequests) {
             // Insert the variant
             var variantDTO = new VariantInsertDTO();
@@ -162,22 +193,27 @@ public class ProductServiceImpl implements ProductService {
             Long variantId = variantDTO.getVariantId();
 
             // Handle sizes for the variant
-            for (String size : variantReq.getSizes()) {
-                Long sizeId = productRepo.getSizeIdByName(size);
-                if (sizeId == null) {
-                    Map<String, Object> params = new java.util.HashMap<>();
-                    params.put("name", size);
-                    productRepo.insertSize(params);
-                    sizeId = ((Number) params.get("size_id")).longValue();
+            if(variantReq.getSizes() != null) {
+                for (String size : variantReq.getSizes()) {
+                    Long sizeId = productRepo.getSizeIdByName(size);
+                    if (sizeId == null) {
+                        Map<String, Object> params = new java.util.HashMap<>();
+                        params.put("name", size);
+                        productRepo.insertSize(params);
+                        sizeId = ((Number) params.get("size_id")).longValue();
+                    }
+                    productRepo.insertVariantSize(variantId, sizeId);
                 }
-                productRepo.insertVariantSize(variantId, sizeId);
             }
+
 
             // Handle image uploads for the variant
             int imagesToUpload = variantReq.getImageCount();
-            for (int i = 0; i < imagesToUpload && imageIndex < images.size(); i++) {
-                String url = uploadToPinata(images.get(imageIndex++));
-                productRepo.insertImage(variantId, url);
+            if (images != null) {
+                for (int i = 0; i < imagesToUpload && imageIndex < images.size(); i++) {
+                    String url = uploadToPinata(images.get(imageIndex++));
+                    productRepo.insertImage(variantId, url);
+                }
             }
         }
     }
@@ -188,8 +224,10 @@ public class ProductServiceImpl implements ProductService {
             finalPrice -= product.getBasePrice() * product.getDiscountPercent() / 100.0;
         }
 
-        // FIX: Removed the unused 'availableSizes' list calculation.
-        // The sizes are now correctly handled inside the 'gallery' object.
+        // Map categories to CategoryDto recursively
+        List<CategoryDto> categoryDtos = product.getCategories().stream()
+                .map(this::mapToCategoryDto)
+                .collect(Collectors.toList());
 
         return ProductResponse.builder()
                 .id(product.getProductId())
@@ -205,7 +243,28 @@ public class ProductServiceImpl implements ProductService {
                                 .build())
                         .toList())
                 .description(product.getDescription())
+                .categories(categoryDtos) // Add categories to the response
                 .build();
+    }
+
+    /**
+     * FIX: Updated method to recursively map category children.
+     */
+    private CategoryDto mapToCategoryDto(Category category) {
+        CategoryDto dto = new CategoryDto();
+        dto.setId(category.getCategoryId());
+        dto.setName(category.getName());
+
+        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+            dto.setChildren(
+                    category.getChildren().stream()
+                            .map(this::mapToCategoryDto) // Recursive call
+                            .collect(Collectors.toSet())
+            );
+        } else {
+            dto.setChildren(Collections.emptySet()); // Return empty set instead of null
+        }
+        return dto;
     }
 
     private String uploadToPinata(MultipartFile file) throws IOException {

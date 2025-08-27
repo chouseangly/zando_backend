@@ -1,7 +1,7 @@
 package com.example.zandobackend.model.entity;
 
 import lombok.Data;
-import java.util.ArrayList; // <-- Make sure this import is added
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -13,4 +13,5 @@ public class Product {
     private Double basePrice;
     private Integer discountPercent;
     private List<ProductVariant> variants = new ArrayList<>();
+    private List<Category> categories = new ArrayList<>(); // <-- ADD THIS LINE
 }
