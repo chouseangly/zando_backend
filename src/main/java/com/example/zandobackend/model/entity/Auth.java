@@ -27,7 +27,6 @@ public class Auth implements UserDetails {
     @JsonIgnore
     private String password;
     private String role;
-    private boolean enabled;
     private LocalDateTime createdAt;
 
     @Override
@@ -54,9 +53,6 @@ public class Auth implements UserDetails {
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
-
-    @Override
-    public boolean isEnabled() { return enabled; }
 
     public String getUserName() {
         return userName;

@@ -1,8 +1,5 @@
 package com.example.zandobackend.service.impl;
 
-
-
-
 import com.example.zandobackend.model.dto.UserProfileRequest;
 import com.example.zandobackend.model.entity.UserProfile;
 import com.example.zandobackend.repository.UserProfileRepo;
@@ -44,10 +41,9 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     public UserProfile createUserProfile(Long userId, String gender, String phoneNumber,
                                          LocalDate birthday, String address,
-                                         MultipartFile profileImage, MultipartFile coverImage) throws IOException {
+                                         MultipartFile profileImage) throws IOException {
 
         String profileImagePath = uploadFileToPinata(profileImage);
-
 
         UserProfileRequest request = new UserProfileRequest();
         request.setUserId(userId);
@@ -66,16 +62,15 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         return userProfileRepo.getProfileByUserId(userId);
     }
+
     @Override
     public UserProfile updateUserProfileWithImage(Long userId, String gender, String phoneNumber,
-                                                  LocalDate birthday, String address, String telegramUrl,
-                                                  String slogan, String userName,
-                                                  MultipartFile profileImage) throws IOException {
+                                                  LocalDate birthday, String address, String userName,
+                                                  String firstName, String lastName, MultipartFile profileImage) throws IOException {
 
         UserProfile existing = userProfileRepo.getProfileByUserId(userId);
         if (existing == null) return null;
 
-        // Update fields if provided
         if (gender != null && !gender.isEmpty()) existing.setGender(gender);
         if (phoneNumber != null && !phoneNumber.isEmpty()) existing.setPhoneNumber(phoneNumber);
         if (birthday != null) existing.setBirthday(birthday);
@@ -84,13 +79,10 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (firstName != null && !firstName.isEmpty()) existing.setFirstName(firstName);
         if (lastName != null && !lastName.isEmpty()) existing.setLastName(lastName);
 
-        // Handle profile and cover image uploads
         if (profileImage != null && !profileImage.isEmpty()) {
             existing.setProfileImage(uploadFileToPinata(profileImage));
         }
 
-
-        // Convert updated entity to request DTO
         UserProfileRequest request = new UserProfileRequest();
         request.setUserId(existing.getUserId());
         request.setGender(existing.getGender());
@@ -102,26 +94,15 @@ public class UserProfileServiceImpl implements UserProfileService {
         request.setLastName(existing.getLastName());
         request.setProfileImage(existing.getProfileImage());
 
-
-
         userProfileRepo.updateUserProfile(request);
-
 
         return userProfileRepo.getProfileByUserId(userId);
     }
-
-
-    private static UserProfile getUserProfile(UserProfile existing) {
-        return existing;
-    }
-
 
     @Override
     public List<UserProfile> getUserProfiles() {
         return userProfileRepo.getUserProfiles();
     }
-
-
 
     @Override
     public UserProfile getProfile(Long userId) {
@@ -134,6 +115,9 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     private String uploadFileToPinata(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost post = new HttpPost(PINATA_URL);
             post.setHeader("pinata_api_key", pinataApiKey);
@@ -154,15 +138,14 @@ public class UserProfileServiceImpl implements UserProfileService {
             }
         }
     }
+
     @Override
     public void createUserProfileAfterVerify(UserProfile userProfile){
         userProfileRepo.createUserProfileAfterVerify(userProfile);
     }
+
     @Override
     public boolean existsByUserId(Long userId) {
         return userProfileRepo.existsByUserId(userId);
     }
-
-
-
 }

@@ -1,6 +1,5 @@
 package com.example.zandobackend.controller;
 
-
 import com.example.zandobackend.model.dto.ApiResponse;
 import com.example.zandobackend.model.entity.Notification;
 import com.example.zandobackend.model.entity.UserProfile;
@@ -36,11 +35,10 @@ public class UserProfileController {
             @RequestParam("phoneNumber") String phoneNumber,
             @RequestParam @DateTimeFormat(pattern = "MM/dd/yyyy") LocalDate birthday,
             @RequestParam("address") String address,
-            @RequestPart("profileImage") MultipartFile profileImage,
-            @RequestPart("coverImage") MultipartFile coverImage
+            @RequestPart("profileImage") MultipartFile profileImage
     ) {
         try {
-            UserProfile created = profileService.createUserProfile(userId, gender, phoneNumber, birthday, address, profileImage, coverImage);
+            UserProfile created = profileService.createUserProfile(userId, gender, phoneNumber, birthday, address, profileImage);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse<>("User profile created/updated successfully", created, HttpStatus.CREATED.value(), LocalDateTime.now()));
         } catch (IOException e) {
@@ -64,8 +62,8 @@ public class UserProfileController {
         try {
             UserProfile updated = profileService.updateUserProfileWithImage(
                     userId, gender, phoneNumber, birthday, address,
-                     userName, firstName, lastName, profileImage);
-            // Inside your code
+                    userName, firstName, lastName, profileImage);
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedDateTime = LocalDateTime.now().format(formatter);
             Notification notification = Notification.builder()
@@ -82,33 +80,27 @@ public class UserProfileController {
         }
     }
 
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserProfile>>> getUserProfiles() {
         List<UserProfile> userProfiles = profileService.getUserProfiles();
-
         if (userProfiles == null || userProfiles.isEmpty()) {
             return ResponseEntity.ok(
                     new ApiResponse<>("No user profiles found", Collections.emptyList(), HttpStatus.OK.value(), LocalDateTime.now())
             );
         }
-
         return ResponseEntity.ok(
                 new ApiResponse<>("Get user profiles successfully", userProfiles, HttpStatus.OK.value(), LocalDateTime.now())
         );
     }
 
-
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserProfile>> getProfile(@PathVariable Long userId) {
         UserProfile userProfile = profileService.getProfile(userId);
-
         if (userProfile == null) {
             return ResponseEntity.ok(
                     new ApiResponse<>("User profile not found", null, HttpStatus.OK.value(), LocalDateTime.now())
             );
         }
-
         return ResponseEntity.ok(
                 new ApiResponse<>("User profile fetched successfully", userProfile, HttpStatus.OK.value(), LocalDateTime.now())
         );
@@ -122,4 +114,3 @@ public class UserProfileController {
         );
     }
 }
-

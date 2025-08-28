@@ -25,13 +25,12 @@ public interface AuthRepo {
             @Result(property = "password", column = "password"),
             @Result(property = "role", column = "role"),
             @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "enabled", column = "enabled")
     })
     Auth findByEmail(String email);
 
     @Insert("""
-  INSERT INTO users (user_name, first_name, last_name, email, password, role, enabled, created_at)
-  VALUES (#{userName}, #{firstName}, #{lastName}, #{email}, #{password}, #{role}, #{enabled}, #{createdAt})
+  INSERT INTO users (user_name, first_name, last_name, email, password, role, created_at)
+  VALUES (#{userName}, #{firstName}, #{lastName}, #{email}, #{password}, #{role}, #{createdAt})
 """)
     void insertUser(Auth auth);
 

@@ -46,7 +46,6 @@ public class AuthController {
         auth.setPassword(passwordEncoder.encode(authRequest.getPassword()));
         auth.setRole("USER");
         auth.setCreatedAt(LocalDateTime.now());
-        auth.setEnabled(false);
 
         authService.registerUser(auth);
         otpService.sendOtp(auth.getEmail());
