@@ -42,12 +42,13 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auths/**",
                                 "/api/v1/categories/**", // <-- Your categories endpoint is now public
-                                "/api/products/**",
+                                "/api/v1/products/",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
                         .anyRequest().authenticated()
+                        .requestMatchers("/api/v1/products/post").authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

@@ -174,17 +174,16 @@ CREATE TABLE favorite (
 
 -- ## Notifications Table ##
 -- Stores notifications for users.
-CREATE TABLE notification (
-                              notification_id SERIAL PRIMARY KEY,
-                              uuid UUID DEFAULT gen_random_uuid() NOT NULL,
-                              user_id INT NOT NULL,
-                              message TEXT NOT NULL,
-                              is_read BOOLEAN DEFAULT FALSE,
-                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                              CONSTRAINT fk_user
-                                  FOREIGN KEY(user_id)
-                                      REFERENCES users(user_id)
-                                      ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS notifications (
+                                             id SERIAL PRIMARY KEY,
+                                             user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+                                             product_id BIGINT,
+                                             title VARCHAR(255),
+                                             content TEXT,
+                                             icon_url VARCHAR(255),
+                                             is_read BOOLEAN DEFAULT FALSE,
+                                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                             updated_at TIMESTAMP
 );
 -- First, create the category table
 CREATE TABLE category (
@@ -214,7 +213,7 @@ CREATE TABLE product_category (
                                           REFERENCES category(category_id)
                                           ON DELETE CASCADE
 );
-drop table category cascade  ;
+drop table notifications cascade  ;
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.
 -- This script clears and populates the category table based on the menu structure in the provided images.

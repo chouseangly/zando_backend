@@ -17,13 +17,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value ="/post",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @RequestParam("name") String name,
             @RequestParam("description") String description,
@@ -55,7 +55,7 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/getProductById/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long id) {
         ProductResponse response = productService.getProductResponse(id);
 
@@ -80,7 +80,7 @@ public class ProductController {
     }
 
     // FIX: Changed path to be more RESTful (GET /api/products)
-    @GetMapping
+    @GetMapping("/getAllProduct")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
         List<ProductResponse> responses = productService.getAllProducts();
         ApiResponse<List<ProductResponse>> apiResponse = new ApiResponse<>(
