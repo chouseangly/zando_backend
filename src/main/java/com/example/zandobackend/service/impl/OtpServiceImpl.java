@@ -47,12 +47,12 @@ public class OtpServiceImpl implements OtpService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
-            helper.setSubject("Your OTP Code for ResellKH");
+            helper.setSubject("Your OTP Code for Zando ");
             helper.setFrom(fromEmail);
 
 
             String htmlContent = "<html><body>"
-                    + "<h2 style='color:#333;'>Welcome to <b>ResellKH</b>!</h2>"
+                    + "<h2 style='color:#333;'>Welcome to <b>Zando</b>!</h2>"
                     + "<p>Your OTP code is: " + code + "</p>"
                     + "<p>This code expires in 1 minute.</p>"
                     +"<p>Please don't send this otp to other people.</p>"

@@ -11,9 +11,9 @@ public interface UserProfileRepo {
 
     @Insert("""
         INSERT INTO user_profile (
-            user_id,user_name, first_name, last_name, gender, phone_number, profile_image, cover_image, birthday, address,
+            user_id, user_name, first_name, last_name
         ) VALUES (
-            #{userId},#{userName}, #{firstName}, #{lastName} #{gender}, #{phoneNumber}, #{profileImage}, #{coverImage}, #{birthday}, #{address}
+            #{userId}, #{userName}, #{firstName}, #{lastName}
         )
     """)
     void createUserProfileAfterVerify(UserProfile userProfile);
@@ -36,16 +36,13 @@ public interface UserProfileRepo {
             phone_number = #{phoneNumber},
             profile_image = #{profileImage},
             birthday = #{birthday},
-            address = #{address},
-          
+            address = #{address}
         WHERE user_id = #{userId}
     """)
     void updateUserProfile(UserProfileRequest request);
 
-    // In chouseangly/deployment/deployment-main/ResellKH/ResellKH/src/main/java/com/example/resellkh/repository/UserProfileRepo.java
-
     @Select("""
-    SELECT profile_id, user_id, user_name, first_name, last_name,gender, phone_number, profile_image, birthday, address,
+    SELECT profile_id, user_id, user_name, first_name, last_name, gender, phone_number, profile_image, birthday, address
     FROM user_profile
     WHERE user_id = #{userId}
 """)
@@ -86,6 +83,7 @@ public interface UserProfileRepo {
 
     @Select("SELECT COUNT(*) > 0 FROM user_profile WHERE user_id = #{userId}")
     boolean existsByUserId(@Param("userId") Long userId);
+
     @Update("UPDATE user_profile SET is_seller = #{isSeller} WHERE user_id = #{userId}")
     void updateIsSeller(@Param("userId") Long userId, @Param("isSeller") boolean isSeller);
 }

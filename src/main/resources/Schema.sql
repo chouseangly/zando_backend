@@ -4,17 +4,19 @@
 -- ## Users Table ##
 -- Stores user account information.
 CREATE TABLE users (
-                        user_id SERIAL PRIMARY KEY,
-                        uuid UUID DEFAULT gen_random_uuid() NOT NULL,
-                        user_name VARCHAR(255) UNIQUE NOT NULL,
-                        first_name VARCHAR(255),
-                        last_name VARCHAR(255),
-                        email VARCHAR(255) UNIQUE NOT NULL,
-                        password VARCHAR(255) NOT NULL,
-                        role VARCHAR(50) DEFAULT 'user' NOT NULL,
-                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                       user_id SERIAL PRIMARY KEY,
+                       uuid UUID DEFAULT gen_random_uuid() NOT NULL,
+                       user_name VARCHAR(255) UNIQUE NOT NULL,
+                       first_name VARCHAR(255),
+                       last_name VARCHAR(255),
+                       email VARCHAR(255) UNIQUE NOT NULL,
+                       password VARCHAR(255) NOT NULL,
+                       role VARCHAR(50) DEFAULT 'user' NOT NULL,
+                       enabled BOOLEAN DEFAULT FALSE,
+                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- ✅ FIX: Changed from TIMESTAMP WITH TIME ZONE
 );
-truncate table users restart identity cascade ;
+drop table users cascade ;
+truncate table user_profile restart identity cascade ;
 CREATE TABLE user_profile
 (
     profile_id    SERIAL PRIMARY KEY,
@@ -49,8 +51,9 @@ CREATE TABLE product (
                          base_price NUMERIC(10, 2) NOT NULL,
                          discount_percent INT DEFAULT 0,
                          final_price NUMERIC(10, 2) GENERATED ALWAYS AS (base_price * (1 - discount_percent / 100.0)) STORED,
-                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 drop table product cascade ;
 
 -- ## Size Table ##
@@ -114,7 +117,7 @@ CREATE TABLE orders (
                          user_id INT NOT NULL,
                          total_amount NUMERIC(10, 2) NOT NULL,
                          status VARCHAR(50) DEFAULT 'pending' NOT NULL,
-                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          CONSTRAINT fk_user
                              FOREIGN KEY(user_id)
                                  REFERENCES users(user_id)
@@ -157,7 +160,7 @@ CREATE TABLE favorite (
                           uuid UUID DEFAULT gen_random_uuid() NOT NULL,
                           user_id INT NOT NULL,
                           product_id INT NOT NULL,
-                          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           CONSTRAINT fk_user
                               FOREIGN KEY(user_id)
                                   REFERENCES users(user_id)
@@ -177,10 +180,10 @@ CREATE TABLE notification (
                               user_id INT NOT NULL,
                               message TEXT NOT NULL,
                               is_read BOOLEAN DEFAULT FALSE,
-                              created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                               CONSTRAINT fk_user
                                   FOREIGN KEY(user_id)
-                                      REFERENCES "user"(user_id)
+                                      REFERENCES users(user_id)
                                       ON DELETE CASCADE
 );
 -- First, create the category table
@@ -189,7 +192,7 @@ CREATE TABLE category (
                           uuid UUID DEFAULT gen_random_uuid() NOT NULL,
                           name VARCHAR(255) NOT NULL,
                           parent_id INT, -- This will link to another category_id
-                          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           CONSTRAINT fk_parent_category
                               FOREIGN KEY(parent_id)
                                   REFERENCES category(category_id)
@@ -211,6 +214,7 @@ CREATE TABLE product_category (
                                           REFERENCES category(category_id)
                                           ON DELETE CASCADE
 );
+drop table category cascade  ;
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.
 -- This script clears and populates the category table based on the menu structure in the provided images.

@@ -1,5 +1,4 @@
-package com.example.zandobackend.service.impl;// chouseangly/deployment/deployment-main/ResellKH/ResellKH/src/main/java/com/example/resellkh/service/Impl/AuthServiceImpl.java
-
+package com.example.zandobackend.service.impl;
 
 import com.example.zandobackend.jwt.JwtService;
 import com.example.zandobackend.model.dto.AuthResponse;
@@ -38,6 +37,14 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void registerUser(Auth auth) {
         authRepo.insertUser(auth);
+        Auth savedUser = authRepo.findByEmail(auth.getEmail());
+        UserProfile userProfile = UserProfile.builder()
+                .userId(savedUser.getUserId())
+                .userName(savedUser.getUserName())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .build();
+        userProfileRepo.createUserProfileAfterVerify(userProfile);
     }
 
     @Override
@@ -72,13 +79,12 @@ public class AuthServiceImpl implements AuthService {
             UserProfile existingProfile = userProfileRepo.getProfileByUserId(auth.getUserId());
             if (existingProfile == null) {
                 UserProfile profile = new UserProfile();
-                profile.setUserId(auth.getUserId()); // ✅ FIX: No casting needed
+                profile.setUserId(auth.getUserId());
                 profile.setFirstName(auth.getFirstName());
                 profile.setLastName(auth.getLastName());
                 profile.setUserName(auth.getUserName());
                 userProfileRepo.createUserProfileAfterVerify(profile);
             }
-
         } else {
             auth = new Auth();
             auth.setFirstName(googleUserDto.getFirstName());
@@ -93,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
             auth = authRepo.findByEmail(googleUserDto.getEmail());
 
             UserProfile profile = new UserProfile();
-            profile.setUserId(auth.getUserId()); // ✅ FIX: No casting needed
+            profile.setUserId(auth.getUserId());
             profile.setFirstName(auth.getFirstName());
             profile.setLastName(auth.getLastName());
             profile.setUserName(auth.getUserName());
@@ -103,7 +109,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtService.generateToken(auth);
-        UserProfile profile = userProfileRepo.getProfileByUserId(auth.getUserId()); // ✅ FIX: No casting needed
+        UserProfile profile = userProfileRepo.getProfileByUserId(auth.getUserId());
         String profileImage = (profile != null && profile.getProfileImage() != null)
                 ? profile.getProfileImage()
                 : googleUserDto.getPicture();
