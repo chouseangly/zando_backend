@@ -1,7 +1,5 @@
 package com.example.zandobackend.repository;
 
-
-
 import com.example.zandobackend.model.entity.Auth;
 import org.apache.ibatis.annotations.*;
 

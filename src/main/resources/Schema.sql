@@ -14,15 +14,29 @@ CREATE TABLE users (
                         role VARCHAR(50) DEFAULT 'user' NOT NULL,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+truncate table users restart identity cascade ;
+CREATE TABLE user_profile
+(
+    profile_id    SERIAL PRIMARY KEY,
+    user_id       BIGINT REFERENCES users (user_id) ON DELETE CASCADE UNIQUE,
+    user_name     VARCHAR(50),
+    first_name    VARCHAR(50),
+    last_name     VARCHAR(50),
+    birthday      DATE,
+    gender        VARCHAR(10),
+    phone_number  VARCHAR(20),
+    profile_image TEXT,
+    address       TEXT
 
-CREATE TABLE user_profile (
-                              profile_id SERIAL PRIMARY KEY,
-                              user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE UNIQUE,
-                              birthday DATE,
-                              gender VARCHAR(10),
-                              phone_number VARCHAR(20),
-                              profile_image TEXT,
-                              address TEXT
+);
+
+
+CREATE TABLE otp_number (
+                            id SERIAL PRIMARY KEY,
+                            email VARCHAR(255) NOT NULL,
+                            otp VARCHAR(6) NOT NULL,
+                            created_at TIMESTAMP NOT NULL,
+                            verified BOOLEAN DEFAULT FALSE
 );
 
 -- ## Products Table ##
