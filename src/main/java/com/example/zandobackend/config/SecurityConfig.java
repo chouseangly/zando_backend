@@ -5,10 +5,12 @@ import com.example.zandobackend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,6 +26,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -34,21 +37,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Integrate CORS configuration directly into Spring Security
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 2. Explicitly permit public endpoints
                         .requestMatchers(
                                 "/api/v1/auths/**",
-                                "/api/v1/categories/**", // <-- Your categories endpoint is now public
-                                "/api/v1/products/",
+                                "/api/v1/categories/**",
+                                "/api/v1/products/**", // Public access to view products
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        // MODIFIED: Secure admin endpoints
+                        .requestMatchers(HttpMethod.POST,"/api/v1/products/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,"/api/v1/products/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/v1/products/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
-                        .requestMatchers("/api/v1/products/post").authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
@@ -57,11 +61,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    /**
-     * This bean provides the CORS configuration that allows your Next.js frontend
-     * to communicate with the backend.
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -70,7 +69,7 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration); // Apply CORS to all API routes
+        source.registerCorsConfiguration("/**", configuration); // Apply CORS to all API routes
         return source;
     }
 

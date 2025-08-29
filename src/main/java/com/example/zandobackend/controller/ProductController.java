@@ -5,10 +5,10 @@ import com.example.zandobackend.model.dto.ProductRequest;
 import com.example.zandobackend.model.dto.ProductResponse;
 import com.example.zandobackend.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.apache.ibatis.annotations.Delete;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +24,7 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping(value ="/post",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @RequestParam("name") String name,
             @RequestParam("description") String description,
@@ -31,21 +32,19 @@ public class ProductController {
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
             @RequestParam("variants") String variantsJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
-            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds // <-- ADD THIS LINE
+            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds
     ) throws IOException {
 
-        // Build request DTO from request parts
         ProductRequest request = new ProductRequest();
         request.setName(name);
         request.setDescription(description);
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
         request.setVariants(productService.parseVariants(variantsJson));
-        request.setCategoryIds(categoryIds); // <-- ADD THIS LINE
+        request.setCategoryIds(categoryIds);
 
         ProductResponse response = productService.createProduct(request, images);
 
-        // FIX: Use CREATED (201) status consistently
         ApiResponse<ProductResponse> apiResponse = new ApiResponse<>(
                 "Product created successfully",
                 response,
@@ -55,11 +54,10 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
-    @GetMapping("/getProductById/{id}")
+    @GetMapping("/{id}") // ✅ FIX: Changed endpoint to be more RESTful
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long id) {
         ProductResponse response = productService.getProductResponse(id);
 
-        // FIX: Return a 404 NOT FOUND status if the product doesn't exist
         if (response == null) {
             ApiResponse<ProductResponse> apiResponse = new ApiResponse<>(
                     "Product not found with id: " + id,
@@ -79,8 +77,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // FIX: Changed path to be more RESTful (GET /api/products)
-    @GetMapping("/getAllProduct")
+    @GetMapping // ✅ FIX: Changed endpoint to be more RESTful
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
         List<ProductResponse> responses = productService.getAllProducts();
         ApiResponse<List<ProductResponse>> apiResponse = new ApiResponse<>(
@@ -92,32 +89,29 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // FIX: Corrected annotations, method signature, and service call for updating
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
-            @PathVariable Long id, // FIX: Added @PathVariable to get the product ID from the URL
+            @PathVariable Long id,
             @RequestParam(value="name",required = false) String name,
             @RequestParam(value = "description",required = false) String description,
             @RequestParam(value = "basePrice",required = false) Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
             @RequestParam(value = "variants",required = false) String variantsJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
-            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds // <-- ADD THIS LINE
+            @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds
     ) throws IOException {
 
-        // Build request DTO
         ProductRequest request = new ProductRequest();
         request.setName(name);
         request.setDescription(description);
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
         request.setVariants(productService.parseVariants(variantsJson));
-        request.setCategoryIds(categoryIds); // <-- ADD THIS LINE
+        request.setCategoryIds(categoryIds);
 
-        // FIX: Passed the 'id' to the service method
         ProductResponse response = productService.updateProduct(id, request, images);
 
-        // FIX: Use OK (200) status for a successful update
         ApiResponse<ProductResponse> apiResponse = new ApiResponse<>(
                 "Product updated successfully",
                 response,
@@ -127,6 +121,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> deleteProduct(@PathVariable Long id) {
         ProductResponse response = productService.deleteProduct(id);
         return ResponseEntity.ok(

@@ -12,6 +12,8 @@ import com.example.zandobackend.service.NotificationService;
 import com.example.zandobackend.service.OtpService;
 import com.example.zandobackend.service.UserProfileService;
 import com.example.zandobackend.service.impl.AuthServiceImpl;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/auths")
@@ -93,9 +96,8 @@ public class AuthController {
         otpService.sendOtp(otpRequest.getEmail());
         return ResponseEntity.ok(Map.of("message", "OTP resent successfully."));
     }
-
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest login) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest login, HttpServletResponse response) {
         Auth auth = authService.findByEmail(login.getEmail());
 
         if (auth == null || !passwordEncoder.matches(login.getPassword(), auth.getPassword())) {
@@ -107,22 +109,16 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Account not verified"));
         }
-        Notification notification = Notification.builder()
-                .userId(Long.valueOf(auth.getUserId()))
-                .title("Welcome to ResellKH")
-                .content("Welcome to ResellKH! We’re excited to have you join our community. As a new member, you can explore great deals, post your products, and connect with trusted buyers and sellers. Stay updated with the latest promotions, features, and security tips. Thank you for choosing ResellKH — let’s grow together!")
-                .iconUrl("https://gateway.pinata.cloud/ipfs/QmdMXVZ9KCiNGMwFHxkPMfpUfeGL8QQpMoENKeR5NKJ51F")
-                .build();
-        notificationService.createNotificationWithType(notification);
-        System.out.println("Login endpoint called for user!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: " + login.getEmail());
-
-
         String token = jwtService.generateToken(auth);
-        String role = auth.getRole();
+        Cookie cookie = new Cookie("token", token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge((int) TimeUnit.HOURS.toSeconds(5));
+        response.addCookie(cookie);
 
         return ResponseEntity.ok(Map.of(
-                "token", token,
-                "role", role,
+                "role", auth.getRole(),
                 "userId", auth.getUserId(),
                 "firstName", auth.getFirstName(),
                 "lastName", auth.getLastName(),
@@ -130,6 +126,16 @@ public class AuthController {
                 "email", auth.getEmail(),
                 "message", "Login successful"
         ));
+    }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("token", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return ResponseEntity.ok(Map.of("message", "Logout successful"));
     }
 
 
@@ -186,7 +192,7 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> googleLogin(@RequestBody GoogleUserDto googleUserDto) {
         AuthResponse authResponse = authService.registerWithGoogle(googleUserDto);
         Map<String, Object> response = new HashMap<>();
-        response.put("payload", authResponse); // <-- Wrap in 'payload'
+        response.put("payload", authResponse);
         Notification notification = Notification.builder()
                 .userId(authResponse.getUserId())
                 .title("Welcome to ResellKH")
@@ -211,4 +217,3 @@ public class AuthController {
 
 
 }
-

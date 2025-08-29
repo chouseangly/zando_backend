@@ -390,5 +390,5 @@ INSERT INTO category (name, parent_id) VALUES
 
 
 delete from category where category_id = 18;
-truncate table size , product,product_variant,product_image restart identity cascade ;
+truncate table  restart identity cascade ;
 DROP TABLE IF EXISTS order_item CASCADE;
