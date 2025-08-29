@@ -23,7 +23,8 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @PostMapping(value ="/post",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // ✅ MODIFIED: Changed endpoint to match security config
+    @PostMapping(value ="/admin", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @RequestParam("name") String name,
@@ -54,10 +55,11 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
-    @GetMapping("/{id}") // ✅ FIX: Changed endpoint to be more RESTful
+    // This is a public endpoint, no change needed
+    @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long id) {
         ProductResponse response = productService.getProductResponse(id);
-
+        // ... (rest of the method is fine)
         if (response == null) {
             ApiResponse<ProductResponse> apiResponse = new ApiResponse<>(
                     "Product not found with id: " + id,
@@ -77,7 +79,8 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping // ✅ FIX: Changed endpoint to be more RESTful
+    // This is a public endpoint, no change needed
+    @GetMapping
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
         List<ProductResponse> responses = productService.getAllProducts();
         ApiResponse<List<ProductResponse>> apiResponse = new ApiResponse<>(
@@ -89,7 +92,8 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // ✅ MODIFIED: Changed endpoint to match security config
+    @PutMapping(value = "/admin/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable Long id,
@@ -120,15 +124,18 @@ public class ProductController {
         );
         return ResponseEntity.ok(apiResponse);
     }
-    @DeleteMapping("/{id}")
+
+    // ✅ MODIFIED: Changed endpoint to match security config
+    @DeleteMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> deleteProduct(@PathVariable Long id) {
         ProductResponse response = productService.deleteProduct(id);
         return ResponseEntity.ok(
                 new ApiResponse<>("delete successfully", response, HttpStatus.OK.value(), LocalDateTime.now())
         );
-
     }
+
+    // This is a public endpoint, no change needed
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByCategory(@PathVariable Integer categoryId) {
         List<ProductResponse> responses = productService.getProductsByCategoryId(categoryId);

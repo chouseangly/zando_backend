@@ -47,7 +47,7 @@ public class UserProfileController {
         }
     }
 
-    @PutMapping(path = "edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<UserProfile>> updateProfile(
             @RequestParam("userId") Long userId,
             @RequestParam(required = false) String gender,
@@ -60,9 +60,15 @@ public class UserProfileController {
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
         try {
+            // ✅ MODIFIED: The service layer now handles the logic for updating fields
             UserProfile updated = profileService.updateUserProfileWithImage(
                     userId, gender, phoneNumber, birthday, address,
                     userName, firstName, lastName, profileImage);
+
+            if (updated == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>("User profile not found", null, HttpStatus.NOT_FOUND.value(), LocalDateTime.now()));
+            }
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedDateTime = LocalDateTime.now().format(formatter);
