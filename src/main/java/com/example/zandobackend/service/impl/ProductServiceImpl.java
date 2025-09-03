@@ -55,17 +55,18 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setDiscountPercent(request.getDiscountPercent());
+        // ✅ MODIFIED: Use the value from the request, defaulting to true if null
+        product.setIsAvailable(request.getIsAvailable() != null ? request.getIsAvailable() : true);
 
-        productRepo.insertProduct(product); // Insert to get the new product ID
 
-        // Link categories to the product
+        productRepo.insertProduct(product);
+
         if (request.getCategoryIds() != null) {
             for (Integer categoryId : request.getCategoryIds()) {
                 productRepo.insertProductCategory(product.getProductId(), categoryId);
             }
         }
 
-        // Process variants, sizes, and images
         processVariantsAndImages(product.getProductId(), request.getVariants(), images);
 
         return getProductResponse(product.getProductId());
@@ -74,54 +75,49 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Override
     public ProductResponse updateProduct(Long id, ProductRequest request, List<MultipartFile> images) throws IOException {
-        // 1. Ensure the product exists
         Product existingProduct = productRepo.selectProductById(id);
         if (existingProduct == null) {
-            throw new RuntimeException("Product not found with id: " + id); // Or a custom exception
+            throw new RuntimeException("Product not found with id: " + id);
         }
 
-        // 2. Update the core product details
         Product productToUpdate = new Product();
         productToUpdate.setProductId(id);
-        productToUpdate.setName(request.getName());
-        productToUpdate.setDescription(request.getDescription());
-        productToUpdate.setBasePrice(request.getBasePrice());
-        productToUpdate.setDiscountPercent(request.getDiscountPercent());
+
+        // ✅ MODIFIED: Only set fields if they are provided in the request
+        if (request.getName() != null) productToUpdate.setName(request.getName());
+        if (request.getDescription() != null) productToUpdate.setDescription(request.getDescription());
+        if (request.getBasePrice() != null) productToUpdate.setBasePrice(request.getBasePrice());
+        if (request.getDiscountPercent() != null) productToUpdate.setDiscountPercent(request.getDiscountPercent());
+        if (request.getIsAvailable() != null) productToUpdate.setIsAvailable(request.getIsAvailable());
+
         productRepo.updateProduct(productToUpdate);
 
-        // 3. Update categories: delete old and insert new
-        productRepo.deleteProductCategoriesByProductId(id);
         if (request.getCategoryIds() != null) {
+            productRepo.deleteProductCategoriesByProductId(id);
             for (Integer categoryId : request.getCategoryIds()) {
                 productRepo.insertProductCategory(id, categoryId);
             }
         }
 
-        // 4. Delete all old variants, which will cascade delete images and size links
-        productRepo.deleteVariantsByProductId(id);
+        if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+            productRepo.deleteVariantsByProductId(id);
+            processVariantsAndImages(id, request.getVariants(), images);
+        }
 
-        // 5. Create the new variants, sizes, and images from the request
-        processVariantsAndImages(id, request.getVariants(), images);
-
-        // 6. Fetch the updated product and return the response
         return getProductResponse(id);
     }
 
+    // ... (rest of the file remains the same)
     @Transactional
     @Override
     public ProductResponse deleteProduct(Long id) {
-        // 1. Fetch the full product details and map it to a response object *before* deleting.
         ProductResponse productToDelete = getProductResponse(id);
 
-        // 2. Check if the product exists.
         if (productToDelete == null) {
-            throw new RuntimeException("Product not found with id: " + id); // Or a custom exception
+            throw new RuntimeException("Product not found with id: " + id);
         }
 
-        // 3. Delete the product from the database.
         productRepo.deleteProductById(id);
-
-        // 4. Return the response object you saved earlier.
         return productToDelete;
     }
 
@@ -139,7 +135,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductResponse(Long id) {
         Product product = getProduct(id);
         if (product == null) {
-            return null; // Or throw an exception
+            return null;
         }
         return mapToProductResponse(product);
     }
@@ -149,7 +145,7 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products = productRepo.selectAllProducts();
         return products.stream()
                 .map(product -> getProductResponse(product.getProductId()))
-                .filter(Objects::nonNull) // Ensure no null products are in the list
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -158,14 +154,13 @@ public class ProductServiceImpl implements ProductService {
         return mapper.readValue(variantsJson, new TypeReference<>() {});
     }
 
-    // --- Helper methods ---
 
     private Product getProduct(Long id) {
         Product product = productRepo.selectProductById(id);
         if (product == null) {
             return null;
         }
-        product.setCategories(productRepo.selectCategoriesByProductId(id)); // This will now fetch children
+        product.setCategories(productRepo.selectCategoriesByProductId(id));
         List<ProductVariant> variants = productRepo.selectVariantsByProductId(id);
         for (ProductVariant variant : variants) {
             variant.setImages(productRepo.selectImagesByVariantId(variant.getVariantId()));
@@ -175,24 +170,18 @@ public class ProductServiceImpl implements ProductService {
         return product;
     }
 
-    /**
-     * Helper method to create variants, sizes, and images for a given product.
-     * This is used by both create and update operations.
-     */
     private void processVariantsAndImages(Long productId, List<ProductRequest.VariantRequest> variantRequests, List<MultipartFile> images) throws IOException {
-        int imageIndex = 0; // Tracks the current position in the flattened list of all images
+        int imageIndex = 0;
 
-        if (variantRequests == null) return; // Add null check for safety
+        if (variantRequests == null) return;
 
         for (ProductRequest.VariantRequest variantReq : variantRequests) {
-            // Insert the variant
             var variantDTO = new VariantInsertDTO();
             variantDTO.setProductId(productId);
             variantDTO.setColor(variantReq.getColor());
             productRepo.insertVariant(variantDTO);
             Long variantId = variantDTO.getVariantId();
 
-            // Handle sizes for the variant
             if(variantReq.getSizes() != null) {
                 for (String size : variantReq.getSizes()) {
                     Long sizeId = productRepo.getSizeIdByName(size);
@@ -206,8 +195,6 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
 
-
-            // Handle image uploads for the variant
             int imagesToUpload = variantReq.getImageCount();
             if (images != null) {
                 for (int i = 0; i < imagesToUpload && imageIndex < images.size(); i++) {
@@ -224,7 +211,6 @@ public class ProductServiceImpl implements ProductService {
             finalPrice -= product.getBasePrice() * product.getDiscountPercent() / 100.0;
         }
 
-        // Map categories to CategoryDto recursively
         List<CategoryDto> categoryDtos = product.getCategories().stream()
                 .map(this::mapToCategoryDto)
                 .collect(Collectors.toList());
@@ -235,6 +221,7 @@ public class ProductServiceImpl implements ProductService {
                 .price(finalPrice)
                 .originalPrice(product.getBasePrice())
                 .discount(product.getDiscountPercent())
+                .isAvailable(product.getIsAvailable())
                 .gallery(product.getVariants().stream()
                         .map(v -> ProductResponse.GalleryResponse.builder()
                                 .color(v.getColor())
@@ -243,13 +230,10 @@ public class ProductServiceImpl implements ProductService {
                                 .build())
                         .toList())
                 .description(product.getDescription())
-                .categories(categoryDtos) // Add categories to the response
+                .categories(categoryDtos)
                 .build();
     }
 
-    /**
-     * FIX: Updated method to recursively map category children.
-     */
     private CategoryDto mapToCategoryDto(Category category) {
         CategoryDto dto = new CategoryDto();
         dto.setId(category.getCategoryId());
@@ -258,11 +242,11 @@ public class ProductServiceImpl implements ProductService {
         if (category.getChildren() != null && !category.getChildren().isEmpty()) {
             dto.setChildren(
                     category.getChildren().stream()
-                            .map(this::mapToCategoryDto) // Recursive call
+                            .map(this::mapToCategoryDto)
                             .collect(Collectors.toSet())
             );
         } else {
-            dto.setChildren(Collections.emptySet()); // Return empty set instead of null
+            dto.setChildren(Collections.emptySet());
         }
         return dto;
     }

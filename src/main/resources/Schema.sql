@@ -54,6 +54,7 @@ CREATE TABLE product (
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+alter table product add column is_available BOOLEAN DEFAULT TRUE;
 drop table product cascade ;
 
 -- ## Size Table ##

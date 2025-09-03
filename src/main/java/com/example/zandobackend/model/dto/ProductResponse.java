@@ -13,12 +13,13 @@ import java.util.List;
 public class ProductResponse {
     private Long id;
     private String name;
-    private Double price;          // final price
-    private Double originalPrice;  // base price
+    private Double price;
+    private Double originalPrice;
     private Integer discount;
+    private Boolean isAvailable; // <-- ADD THIS LINE
     private List<GalleryResponse> gallery;
     private String description;
-    private List<CategoryDto> categories; // <-- ADD THIS LINE
+    private List<CategoryDto> categories;
 
     @Data
     @Builder

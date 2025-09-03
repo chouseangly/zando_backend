@@ -12,6 +12,7 @@ public class Product {
     private String description;
     private Double basePrice;
     private Integer discountPercent;
+    private Boolean isAvailable; // <-- ADD THIS LINE
     private List<ProductVariant> variants = new ArrayList<>();
-    private List<Category> categories = new ArrayList<>(); // <-- ADD THIS LINE
+    private List<Category> categories = new ArrayList<>();
 }

@@ -23,7 +23,6 @@ public class ProductController {
 
     private final ProductService productService;
 
-    // ✅ MODIFIED: Changed endpoint to match security config
     @PostMapping(value ="/admin", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
@@ -31,6 +30,7 @@ public class ProductController {
             @RequestParam("description") String description,
             @RequestParam("basePrice") Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
+            @RequestParam(value = "isAvailable", required = false) Boolean isAvailable, // ✅ ADDED
             @RequestParam("variants") String variantsJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds
@@ -41,6 +41,7 @@ public class ProductController {
         request.setDescription(description);
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
+        request.setIsAvailable(isAvailable); // ✅ ADDED
         request.setVariants(productService.parseVariants(variantsJson));
         request.setCategoryIds(categoryIds);
 
@@ -55,11 +56,9 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
-    // This is a public endpoint, no change needed
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long id) {
         ProductResponse response = productService.getProductResponse(id);
-        // ... (rest of the method is fine)
         if (response == null) {
             ApiResponse<ProductResponse> apiResponse = new ApiResponse<>(
                     "Product not found with id: " + id,
@@ -79,7 +78,6 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // This is a public endpoint, no change needed
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
         List<ProductResponse> responses = productService.getAllProducts();
@@ -135,7 +133,6 @@ public class ProductController {
         );
     }
 
-    // This is a public endpoint, no change needed
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByCategory(@PathVariable Integer categoryId) {
         List<ProductResponse> responses = productService.getProductsByCategoryId(categoryId);

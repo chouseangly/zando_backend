@@ -60,7 +60,6 @@ public class UserProfileController {
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
         try {
-            // ✅ MODIFIED: The service layer now handles the logic for updating fields
             UserProfile updated = profileService.updateUserProfileWithImage(
                     userId, gender, phoneNumber, birthday, address,
                     userName, firstName, lastName, profileImage);

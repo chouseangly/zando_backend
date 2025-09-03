@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        // MODIFIED: Secure admin endpoints
+                        // ✅ MODIFIED: Secure admin endpoints
                         .requestMatchers(HttpMethod.POST,"/api/v1/products/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,"/api/v1/products/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/v1/products/admin/**").hasRole("ADMIN")

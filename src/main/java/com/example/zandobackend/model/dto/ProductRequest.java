@@ -13,14 +13,15 @@ public class ProductRequest {
     private String description;
     private Double basePrice;
     private Integer discountPercent;
+    private Boolean isAvailable; // Ensure this line is present
     private List<VariantRequest> variants;
     private List<String> allSizes;
-    private List<Integer> categoryIds; // <-- ADD THIS LINE
+    private List<Integer> categoryIds;
 
     @Data
     public static class VariantRequest {
         private String color;
         private List<String> sizes;
-        private int imageCount; // Combined the fields into one class
+        private int imageCount;
     }
 }
