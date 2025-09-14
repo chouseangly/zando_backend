@@ -56,6 +56,7 @@ CREATE TABLE product (
 
 alter table product add column is_available BOOLEAN DEFAULT TRUE;
 drop table product cascade ;
+delete from users where user_id = 2;
 
 -- ## Size Table ##
 -- Stores available product sizes.

@@ -1,7 +1,5 @@
 package com.example.zandobackend.controller;
 
-
-
 import com.example.zandobackend.jwt.JwtService;
 import com.example.zandobackend.model.dto.*;
 import com.example.zandobackend.model.entity.Auth;
@@ -117,7 +115,9 @@ public class AuthController {
         cookie.setMaxAge((int) TimeUnit.HOURS.toSeconds(5));
         response.addCookie(cookie);
 
+        // ✅ **THE FIX IS HERE: Add the token to the JSON response body**
         return ResponseEntity.ok(Map.of(
+                "token", token, // Include the token in the response
                 "role", auth.getRole(),
                 "userId", auth.getUserId(),
                 "firstName", auth.getFirstName(),

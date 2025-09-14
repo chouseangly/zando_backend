@@ -30,7 +30,7 @@ public class ProductController {
             @RequestParam("description") String description,
             @RequestParam("basePrice") Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
-            @RequestParam(value = "isAvailable", required = false) Boolean isAvailable, // ✅ ADDED
+            @RequestParam(value = "isAvailable", required = false) Boolean isAvailable,
             @RequestParam("variants") String variantsJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds
@@ -41,7 +41,7 @@ public class ProductController {
         request.setDescription(description);
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
-        request.setIsAvailable(isAvailable); // ✅ ADDED
+        request.setIsAvailable(isAvailable);
         request.setVariants(productService.parseVariants(variantsJson));
         request.setCategoryIds(categoryIds);
 
@@ -90,7 +90,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // ✅ MODIFIED: Changed endpoint to match security config
+    // ✅ **THIS IS THE CRITICAL BACKEND FIX**
     @PutMapping(value = "/admin/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
@@ -99,6 +99,7 @@ public class ProductController {
             @RequestParam(value = "description",required = false) String description,
             @RequestParam(value = "basePrice",required = false) Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
+            @RequestParam(value = "isAvailable", required = false) Boolean isAvailable, // This parameter was missing
             @RequestParam(value = "variants",required = false) String variantsJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds
@@ -109,6 +110,7 @@ public class ProductController {
         request.setDescription(description);
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
+        request.setIsAvailable(isAvailable); // Now we handle the 'isAvailable' field
         request.setVariants(productService.parseVariants(variantsJson));
         request.setCategoryIds(categoryIds);
 
@@ -123,7 +125,6 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // ✅ MODIFIED: Changed endpoint to match security config
     @DeleteMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> deleteProduct(@PathVariable Long id) {

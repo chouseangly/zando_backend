@@ -47,6 +47,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+
     @Transactional
     @Override
     public ProductResponse createProduct(ProductRequest request, List<MultipartFile> images) throws IOException {
@@ -57,7 +58,6 @@ public class ProductServiceImpl implements ProductService {
         product.setDiscountPercent(request.getDiscountPercent());
         // ✅ MODIFIED: Use the value from the request, defaulting to true if null
         product.setIsAvailable(request.getIsAvailable() != null ? request.getIsAvailable() : true);
-
 
         productRepo.insertProduct(product);
 

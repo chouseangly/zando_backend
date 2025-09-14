@@ -13,7 +13,7 @@ public class ProductRequest {
     private String description;
     private Double basePrice;
     private Integer discountPercent;
-    private Boolean isAvailable; // Ensure this line is present
+    private Boolean isAvailable; // <-- Make sure this line is present
     private List<VariantRequest> variants;
     private List<String> allSizes;
     private List<Integer> categoryIds;
