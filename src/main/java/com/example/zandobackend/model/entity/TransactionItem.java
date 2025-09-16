@@ -1,7 +1,5 @@
 package com.example.zandobackend.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,13 +10,14 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class TransactionItem {
 
-
     private Long id;
-    private Transaction transaction;
-    private Product product;
+    private Long transactionId;
+    private Long productId;
     private Integer quantity;
     private BigDecimal priceAtPurchase;
+
+    // This field will be populated by the MyBatis mapper
+    private Product product;
 }

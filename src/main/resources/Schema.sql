@@ -216,26 +216,31 @@ CREATE TABLE product_category (
                                           ON DELETE CASCADE
 );
 
+-- Append this to your existing Schema.sql file
+
+-- Table to store overall transaction/order details
 CREATE TABLE IF NOT EXISTS transactions (
-                                            id SERIAL8 PRIMARY KEY,
+                                            id BIGSERIAL PRIMARY KEY, -- BIGSERIAL is for PostgreSQL to create an auto-incrementing BIGINT
                                             user_id BIGINT NOT NULL,
                                             total_amount DECIMAL(10, 2) NOT NULL,
-                                            status VARCHAR(50) NOT NULL, -- e.g., 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'
+                                            status VARCHAR(50) NOT NULL,
                                             shipping_address TEXT,
                                             payment_method VARCHAR(100),
                                             order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                            FOREIGN KEY (user_id) REFERENCES users(user_id)
+                                            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+truncate table transactions restart identity cascade ;
 
 -- Table to store individual items within a transaction
 CREATE TABLE IF NOT EXISTS transaction_items (
-                                                 id SERIAL8 PRIMARY KEY,
+                                                 id BIGSERIAL PRIMARY KEY,
                                                  transaction_id BIGINT NOT NULL,
                                                  product_id BIGINT NOT NULL,
                                                  quantity INT NOT NULL,
                                                  price_at_purchase DECIMAL(10, 2) NOT NULL,
-                                                 FOREIGN KEY (transaction_id) REFERENCES transactions(id),
-                                                 FOREIGN KEY (product_id) REFERENCES product(product_id)
+                                                 FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+                                                 FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
 );
 drop table notifications cascade  ;
 

@@ -43,4 +43,8 @@ public interface AuthRepo {
     @ResultMap("UserResult")
     List<Auth> getAllUser();
 
+    @Select("SELECT * FROM users WHERE user_id = #{userId}")
+    @ResultMap("UserResult")
+    Auth findByUserId(Long userId);
+
 }

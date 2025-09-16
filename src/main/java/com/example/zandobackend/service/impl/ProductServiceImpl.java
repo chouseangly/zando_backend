@@ -130,12 +130,29 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse getProductResponse(Long id) {
-        Product product = getProduct(id);
+        Product product = getProductById(id); // Changed from getProduct(id)
         if (product == null) {
             return null;
         }
         return mapToProductResponse(product);
     }
+
+    @Override
+    public Product getProductById(Long id) {
+        Product product = productRepo.selectProductById(id);
+        if (product == null) {
+            return null;
+        }
+        product.setCategories(productRepo.selectCategoriesByProductId(id));
+        List<ProductVariant> variants = productRepo.selectVariantsByProductId(id);
+        for (ProductVariant variant : variants) {
+            variant.setImages(productRepo.selectImagesByVariantId(variant.getVariantId()));
+            variant.setSizes(productRepo.selectSizesByVariantId(variant.getVariantId()));
+        }
+        product.setVariants(variants);
+        return product;
+    }
+
 
     @Override
     public List<ProductResponse> getAllProducts() {
@@ -151,21 +168,6 @@ public class ProductServiceImpl implements ProductService {
         return mapper.readValue(variantsJson, new TypeReference<>() {});
     }
 
-
-    private Product getProduct(Long id) {
-        Product product = productRepo.selectProductById(id);
-        if (product == null) {
-            return null;
-        }
-        product.setCategories(productRepo.selectCategoriesByProductId(id));
-        List<ProductVariant> variants = productRepo.selectVariantsByProductId(id);
-        for (ProductVariant variant : variants) {
-            variant.setImages(productRepo.selectImagesByVariantId(variant.getVariantId()));
-            variant.setSizes(productRepo.selectSizesByVariantId(variant.getVariantId()));
-        }
-        product.setVariants(variants);
-        return product;
-    }
 
     private void processVariantsAndImages(Long productId, List<ProductRequest.VariantRequest> variantRequests, List<MultipartFile> images) throws IOException {
         int imageIndex = 0;
