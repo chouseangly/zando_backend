@@ -90,7 +90,6 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // ✅ **THIS IS THE CRITICAL BACKEND FIX**
     @PutMapping(value = "/admin/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
@@ -99,7 +98,7 @@ public class ProductController {
             @RequestParam(value = "description",required = false) String description,
             @RequestParam(value = "basePrice",required = false) Double basePrice,
             @RequestParam(value = "discountPercent", required = false) Integer discountPercent,
-            @RequestParam(value = "isAvailable", required = false) Boolean isAvailable, // This parameter was missing
+            @RequestParam(value = "isAvailable", required = false) Boolean isAvailable,
             @RequestParam(value = "variants",required = false) String variantsJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @RequestParam(value = "categoryIds", required = false) List<Integer> categoryIds
@@ -110,8 +109,10 @@ public class ProductController {
         request.setDescription(description);
         request.setBasePrice(basePrice);
         request.setDiscountPercent(discountPercent);
-        request.setIsAvailable(isAvailable); // Now we handle the 'isAvailable' field
-        request.setVariants(productService.parseVariants(variantsJson));
+        request.setIsAvailable(isAvailable);
+        if (variantsJson != null) {
+            request.setVariants(productService.parseVariants(variantsJson));
+        }
         request.setCategoryIds(categoryIds);
 
         ProductResponse response = productService.updateProduct(id, request, images);

@@ -23,5 +23,6 @@ public class ProductRequest {
         private String color;
         private List<String> sizes;
         private int imageCount;
+        private List<String> images;
     }
 }

@@ -215,6 +215,28 @@ CREATE TABLE product_category (
                                           REFERENCES category(category_id)
                                           ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS transactions (
+                                            id SERIAL8 PRIMARY KEY,
+                                            user_id BIGINT NOT NULL,
+                                            total_amount DECIMAL(10, 2) NOT NULL,
+                                            status VARCHAR(50) NOT NULL, -- e.g., 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'
+                                            shipping_address TEXT,
+                                            payment_method VARCHAR(100),
+                                            order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                            FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Table to store individual items within a transaction
+CREATE TABLE IF NOT EXISTS transaction_items (
+                                                 id SERIAL8 PRIMARY KEY,
+                                                 transaction_id BIGINT NOT NULL,
+                                                 product_id BIGINT NOT NULL,
+                                                 quantity INT NOT NULL,
+                                                 price_at_purchase DECIMAL(10, 2) NOT NULL,
+                                                 FOREIGN KEY (transaction_id) REFERENCES transactions(id),
+                                                 FOREIGN KEY (product_id) REFERENCES product(product_id)
+);
 drop table notifications cascade  ;
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.

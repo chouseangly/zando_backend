@@ -56,7 +56,6 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setDiscountPercent(request.getDiscountPercent());
-        // ✅ MODIFIED: Use the value from the request, defaulting to true if null
         product.setIsAvailable(request.getIsAvailable() != null ? request.getIsAvailable() : true);
 
         productRepo.insertProduct(product);
@@ -83,7 +82,6 @@ public class ProductServiceImpl implements ProductService {
         Product productToUpdate = new Product();
         productToUpdate.setProductId(id);
 
-        // ✅ MODIFIED: Only set fields if they are provided in the request
         if (request.getName() != null) productToUpdate.setName(request.getName());
         if (request.getDescription() != null) productToUpdate.setDescription(request.getDescription());
         if (request.getBasePrice() != null) productToUpdate.setBasePrice(request.getBasePrice());
@@ -107,7 +105,6 @@ public class ProductServiceImpl implements ProductService {
         return getProductResponse(id);
     }
 
-    // ... (rest of the file remains the same)
     @Transactional
     @Override
     public ProductResponse deleteProduct(Long id) {
@@ -200,6 +197,10 @@ public class ProductServiceImpl implements ProductService {
                 for (int i = 0; i < imagesToUpload && imageIndex < images.size(); i++) {
                     String url = uploadToPinata(images.get(imageIndex++));
                     productRepo.insertImage(variantId, url);
+                }
+            } else if (variantReq.getImages() != null) {
+                for (String imageUrl : variantReq.getImages()) {
+                    productRepo.insertImage(variantId, imageUrl);
                 }
             }
         }
