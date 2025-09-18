@@ -242,6 +242,28 @@ CREATE TABLE IF NOT EXISTS transaction_items (
                                                  FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
                                                  FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
 );
+
+CREATE TABLE shopping_cart (
+                               cart_id SERIAL PRIMARY KEY,
+                               user_id INT UNIQUE, -- Each user has one cart
+                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               CONSTRAINT fk_user_cart FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE cart_item (
+                           cart_item_id SERIAL PRIMARY KEY,
+                           cart_id INT NOT NULL,
+                           product_id INT NOT NULL,
+                           variant_id INT NOT NULL, -- To specify color
+                           size_id INT NOT NULL,    -- To specify size
+                           quantity INT NOT NULL,
+                           added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           CONSTRAINT fk_cart FOREIGN KEY(cart_id) REFERENCES shopping_cart(cart_id) ON DELETE CASCADE,
+                           CONSTRAINT fk_product_cart FOREIGN KEY(product_id) REFERENCES product(product_id) ON DELETE CASCADE,
+                           CONSTRAINT fk_variant_cart FOREIGN KEY(variant_id) REFERENCES product_variant(variant_id) ON DELETE CASCADE,
+                           CONSTRAINT fk_size_cart FOREIGN KEY(size_id) REFERENCES size(size_id) ON DELETE CASCADE
+);
 drop table notifications cascade  ;
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.

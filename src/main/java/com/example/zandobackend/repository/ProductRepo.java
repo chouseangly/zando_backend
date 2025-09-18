@@ -44,21 +44,20 @@ public interface ProductRepo {
     void insertProduct(Product product);
 
     @Select("SELECT * FROM product WHERE product_id = #{productId}")
-    @Results({
+    @Results(id = "ProductResultMap", value = {
             @Result(property = "productId",       column = "product_id"),
             @Result(property = "basePrice",       column = "base_price"),
             @Result(property = "discountPercent", column = "discount_percent"),
-            @Result(property = "isAvailable",     column = "is_available")
+            @Result(property = "isAvailable",     column = "is_available"),
+            @Result(property = "variants",        column = "product_id",
+                    many = @Many(select = "selectVariantsByProductId")),
+            @Result(property = "categories",      column = "product_id",
+                    many = @Many(select = "selectCategoriesByProductId"))
     })
     Product selectProductById(@Param("productId") Long productId);
 
     @Select("SELECT * FROM product")
-    @Results({
-            @Result(property = "productId",       column = "product_id"),
-            @Result(property = "basePrice",       column = "base_price"),
-            @Result(property = "discountPercent", column = "discount_percent"),
-            @Result(property = "isAvailable",     column = "is_available")
-    })
+    @ResultMap("ProductResultMap")
     List<Product> selectAllProducts();
 
     // ✅ MODIFIED: Switched to a dynamic SQL builder for partial updates
@@ -74,6 +73,13 @@ public interface ProductRepo {
     void insertVariant(VariantInsertDTO variant);
 
     @Select("SELECT variant_id, product_id, color, uuid FROM product_variant WHERE product_id = #{productId}")
+    @Results({
+            @Result(property = "variantId", column = "variant_id"),
+            @Result(property = "images",    column = "variant_id",
+                    many = @Many(select = "selectImagesByVariantId")),
+            @Result(property = "sizes",     column = "variant_id",
+                    many = @Many(select = "selectSizesByVariantId"))
+    })
     List<ProductVariant> selectVariantsByProductId(@Param("productId") Long productId);
 
     @Delete("DELETE FROM product_variant WHERE product_id = #{productId}")
