@@ -5,9 +5,12 @@ import com.example.zandobackend.model.dto.ProductRequest;
 import com.example.zandobackend.model.dto.ProductResponse;
 import com.example.zandobackend.model.dto.VariantInsertDTO;
 import com.example.zandobackend.model.entity.Category;
+import com.example.zandobackend.model.entity.Notification;
 import com.example.zandobackend.model.entity.Product;
 import com.example.zandobackend.model.entity.ProductVariant;
 import com.example.zandobackend.repository.ProductRepo;
+import com.example.zandobackend.service.FavoriteService;
+import com.example.zandobackend.service.NotificationService;
 import com.example.zandobackend.service.ProductService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +39,8 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepo productRepo;
+    private final NotificationService notificationService;
+    private final FavoriteService favoriteService;
 
     @Value("${pinata.api.key}")
     private String pinataApiKey;
@@ -89,6 +94,30 @@ public class ProductServiceImpl implements ProductService {
         if (request.getIsAvailable() != null) productToUpdate.setIsAvailable(request.getIsAvailable());
 
         productRepo.updateProduct(productToUpdate);
+
+        // ADDED: Notification logic for product updates
+        if (request.getDiscountPercent() != null && request.getDiscountPercent() > 0) {
+            List<Long> userIds = favoriteService.findUserIdsByProductId(id);
+            if (userIds != null && !userIds.isEmpty()) {
+                String content = String.format(
+                        "Good news! '%s' from your wishlist is now %d%% off.",
+                        existingProduct.getName(),
+                        request.getDiscountPercent()
+                );
+
+                for (Long userId : userIds) {
+                    Notification notification = Notification.builder()
+                            .userId(userId)
+                            .productId(id) // Link notification to the product
+                            .title("An item on your wishlist is on sale!")
+                            .content(content)
+                            .iconUrl("https://gateway.pinata.cloud/ipfs/your-sale-icon-hash") // Placeholder
+                            .build();
+                    notificationService.createNotificationWithType(notification);
+                }
+            }
+        }
+
 
         if (request.getCategoryIds() != null) {
             productRepo.deleteProductCategoriesByProductId(id);
@@ -178,6 +207,7 @@ public class ProductServiceImpl implements ProductService {
             var variantDTO = new VariantInsertDTO();
             variantDTO.setProductId(productId);
             variantDTO.setColor(variantReq.getColor());
+            variantDTO.setQuantity(variantReq.getQuantity());
             productRepo.insertVariant(variantDTO);
             Long variantId = variantDTO.getVariantId();
 
@@ -228,6 +258,7 @@ public class ProductServiceImpl implements ProductService {
                 .gallery(product.getVariants().stream()
                         .map(v -> ProductResponse.GalleryResponse.builder()
                                 .color(v.getColor())
+                                .quantity(v.getQuantity())
                                 .images(v.getImages())
                                 .sizes(v.getSizes())
                                 .build())

@@ -1,11 +1,11 @@
 package com.example.zandobackend.model.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,7 +16,7 @@ public class ProductResponse {
     private Double price;
     private Double originalPrice;
     private Integer discount;
-    private Boolean isAvailable; // <-- ADD THIS LINE
+    private Boolean isAvailable;
     private List<GalleryResponse> gallery;
     private String description;
     private List<CategoryDto> categories;
@@ -25,7 +25,8 @@ public class ProductResponse {
     @Builder
     public static class GalleryResponse {
         private String color;
+        private int quantity; // ✅ ADDED
         private List<String> images;
-        private List<String> sizes;
+        private List<String> sizes; // ✅ REVERTED to List<String>
     }
 }

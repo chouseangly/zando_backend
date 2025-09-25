@@ -40,4 +40,6 @@ public interface FavoriteRepo {
                     one = @One(select = "com.example.zandobackend.repository.ProductRepo.selectProductById"))
     })
     Favorite findFavoriteByUserAndProduct(@Param("userId") Long userId, @Param("productId") Long productId);
+    @Select("SELECT user_id FROM favorite WHERE product_id = #{productId}")
+    List<Long> findUserIdsByProductId(@Param("productId") Long productId);
 }

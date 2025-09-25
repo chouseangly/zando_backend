@@ -47,4 +47,9 @@ public interface AuthRepo {
     @ResultMap("UserResult")
     Auth findByUserId(Long userId);
 
+    // ✅ ADDED: New method to find all admin users
+    @Select("SELECT * FROM users WHERE role = 'ADMIN'")
+    @ResultMap("UserResult")
+    List<Auth> findAllAdmins();
+
 }

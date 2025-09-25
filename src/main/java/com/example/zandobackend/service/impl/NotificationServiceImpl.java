@@ -9,6 +9,7 @@ import com.example.zandobackend.repository.NotificationRepo;
 import com.example.zandobackend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // ✅ IMPORT TRANSACTIONAL
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional // ✅ FIX: Add this annotation
     public void markNotificationAsRead(Long userId, Long id) {
         notificationRepo.markNotificationAsRead(userId, id);
     }

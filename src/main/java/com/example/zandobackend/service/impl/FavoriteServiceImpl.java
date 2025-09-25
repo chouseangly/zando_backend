@@ -7,20 +7,26 @@ import com.example.zandobackend.model.entity.Favorite;
 import com.example.zandobackend.repository.FavoriteRepo;
 import com.example.zandobackend.service.FavoriteService;
 import com.example.zandobackend.service.ProductService;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class FavoriteServiceImpl implements FavoriteService {
 
     private final FavoriteRepo favoriteRepo;
     private final ProductService productService;
     private final ModelMapper modelMapper;
+
+    // ✅ FIX: Use a manual constructor with @Lazy to break the dependency cycle.
+    public FavoriteServiceImpl(FavoriteRepo favoriteRepo, @Lazy ProductService productService, ModelMapper modelMapper) {
+        this.favoriteRepo = favoriteRepo;
+        this.productService = productService;
+        this.modelMapper = modelMapper;
+    }
 
     @Override
     public FavoriteResponse addFavorite(FavoriteRequest favoriteRequest) {
@@ -30,7 +36,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         // Insert into the database
         favoriteRepo.addFavorite(favoriteRequest);
 
-        // ✅ MODIFIED: Fetch the newly created favorite record and return it
+        // MODIFIED: Fetch the newly created favorite record and return it
         Favorite newFavourite = favoriteRepo.findFavoriteByUserAndProduct(favoriteRequest.getUserId(), favoriteRequest.getProductId());
         return mapToFavoriteResponse(newFavourite);
     }
@@ -63,5 +69,10 @@ public class FavoriteServiceImpl implements FavoriteService {
             response.setProduct(productResponse);
         }
         return response;
+    }
+
+    @Override
+    public List<Long> findUserIdsByProductId(Long productId) {
+        return favoriteRepo.findUserIdsByProductId(productId);
     }
 }

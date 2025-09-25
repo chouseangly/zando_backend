@@ -68,13 +68,14 @@ public interface ProductRepo {
     void deleteProductById(@Param("productId") Long productId);
 
     // ... (rest of the file is unchanged)
-    @Insert("INSERT INTO product_variant(product_id, color) VALUES(#{productId}, #{color})")
+    @Insert("INSERT INTO product_variant(product_id, color, quantity) VALUES(#{productId}, #{color}, #{quantity})")
     @Options(useGeneratedKeys = true, keyProperty = "variantId")
     void insertVariant(VariantInsertDTO variant);
 
-    @Select("SELECT variant_id, product_id, color, uuid FROM product_variant WHERE product_id = #{productId}")
+    @Select("SELECT variant_id, product_id, color, uuid, quantity FROM product_variant WHERE product_id = #{productId}")
     @Results({
             @Result(property = "variantId", column = "variant_id"),
+            @Result(property = "quantity",  column = "quantity"),
             @Result(property = "images",    column = "variant_id",
                     many = @Many(select = "selectImagesByVariantId")),
             @Result(property = "sizes",     column = "variant_id",

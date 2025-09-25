@@ -78,6 +78,7 @@ CREATE TABLE product_variant (
                                          REFERENCES product(product_id)
                                          ON DELETE CASCADE
 );
+ALTER TABLE product_variant ADD COLUMN quantity INT DEFAULT 0;
 
 -- ## Product Image Table ##
 -- Stores images for each product variant.
@@ -111,8 +112,8 @@ CREATE TABLE variant_size (
                               UNIQUE (variant_id, size_id)
 );
 
--- ## Orders Table ##
--- Stores customer order information.
+
+
 CREATE TABLE orders (
                          order_id SERIAL PRIMARY KEY,
                          uuid UUID DEFAULT gen_random_uuid() NOT NULL,
@@ -125,6 +126,7 @@ CREATE TABLE orders (
                                  REFERENCES users(user_id)
                                  ON DELETE CASCADE
 );
+
 
 -- ## Order Item Table ##
 -- Stores individual items within an order.
@@ -440,6 +442,19 @@ INSERT INTO category (name, parent_id) VALUES
 
 
 
-delete from category where category_id = 18;
-truncate table  restart identity cascade ;
-DROP TABLE IF EXISTS order_item CASCADE;
+-- Truncate all except users and category
+TRUNCATE TABLE
+    otp_number,
+    product,
+    product_variant,
+    product_image,
+    variant_size,
+    orders,
+    order_item,
+    favorite,
+    notifications,
+    transactions,
+    transaction_items,
+    shopping_cart,
+    cart_item
+    RESTART IDENTITY CASCADE;

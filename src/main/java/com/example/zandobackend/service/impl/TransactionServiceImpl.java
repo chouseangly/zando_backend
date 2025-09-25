@@ -5,8 +5,9 @@ import com.example.zandobackend.model.entity.*;
 import com.example.zandobackend.repository.AuthRepo;
 import com.example.zandobackend.repository.ProductRepo;
 import com.example.zandobackend.repository.TransactionRepo;
+import com.example.zandobackend.service.AuthService; // ✅ IMPORT AuthService
 import com.example.zandobackend.service.NotificationService;
-import com.example.zandobackend.service.ProductService; // ✅ Import ProductService
+import com.example.zandobackend.service.ProductService;
 import com.example.zandobackend.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final AuthRepo authRepo;
     private final ProductService productService;
     private final NotificationService notificationService;
+    private final AuthService authService; // ✅ INJECT AuthService
 
     @Override
     @Transactional
@@ -33,6 +35,7 @@ public class TransactionServiceImpl implements TransactionService {
             throw new RuntimeException("User not found with id: " + request.getUserId());
         }
 
+        // ... (existing transaction creation logic)
         Transaction transaction = new Transaction();
         transaction.setUserId(user.getUserId());
         transaction.setShippingAddress(request.getShippingAddress());
@@ -64,29 +67,37 @@ public class TransactionServiceImpl implements TransactionService {
             item.setPriceAtPurchase(BigDecimal.valueOf(product.getBasePrice()));
             transactionRepo.insertTransactionItem(item);
         }
+        // ... (end of existing logic)
 
-        Notification notification = Notification.builder()
+        // Notify the user who placed the order
+        Notification userNotification = Notification.builder()
                 .userId(user.getUserId())
                 .title("New Order Placed")
                 .content("Your order #" + transaction.getId() + " has been successfully placed.")
                 .iconUrl("https://gateway.pinata.cloud/ipfs/your-order-icon-hash") // Placeholder icon
                 .build();
-        notificationService.createNotificationWithType(notification);
+        notificationService.createNotificationWithType(userNotification);
 
+        // ✅ ADDED: Notify all admins about the new order
+        List<Auth> admins = authService.findAllAdmins();
+        for (Auth admin : admins) {
+            Notification adminNotification = Notification.builder()
+                    .userId(admin.getUserId())
+                    .title("New Order Received")
+                    .content("A new order #" + transaction.getId() + " was placed by " + user.getUserName() + ".")
+                    .iconUrl("https://gateway.pinata.cloud/ipfs/your-admin-order-icon-hash") // Placeholder
+                    .build();
+            notificationService.createNotificationWithType(adminNotification);
+        }
 
         return transactionRepo.findById(transaction.getId());
     }
 
     @Override
     public List<Transaction> findAllTransactions() {
-        // 1. Fetch the basic transaction data
         List<Transaction> transactions = transactionRepo.findAll();
-
-        // ✅ FIX: Loop through each transaction to enrich the product data
         for (Transaction transaction : transactions) {
             for (TransactionItem item : transaction.getItems()) {
-                // 2. For each item, fetch the FULL product details (including gallery)
-                // and replace the simple product object with the complete one.
                 Product fullProductDetails = productService.getProductById(item.getProductId());
                 item.setProduct(fullProductDetails);
             }

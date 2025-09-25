@@ -11,4 +11,5 @@ public interface FavoriteService {
     void removeFavorite(Long userId, Long productId);
     List<FavoriteResponse> getFavoritesByUserId(Long userId);
     boolean isFavorite(Long userId, Long productId);
+    List<Long> findUserIdsByProductId(Long productId);
 }

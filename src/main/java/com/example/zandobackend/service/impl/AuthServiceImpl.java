@@ -29,7 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserProfileRepo userProfileRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final NotificationService notificationService; // ✅ Inject NotificationService
+    private final NotificationService notificationService;
 
     // ✅ Private helper method to create a welcome notification
     private void sendWelcomeNotification(Auth user) {
@@ -151,5 +151,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public List<Auth> getAllUser() {
         return authRepo.getAllUser();
+    }
+
+    @Override
+    public List<Auth> findAllAdmins() {
+        return authRepo.findAllAdmins();
     }
 }

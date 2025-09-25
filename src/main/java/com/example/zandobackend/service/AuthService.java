@@ -23,5 +23,7 @@ public interface AuthService extends UserDetailsService {
 
     List<Auth> getAllUser( );
 
-}
+    // ✅ ADDED: Method signature for finding admins
+    List<Auth> findAllAdmins();
 
+}

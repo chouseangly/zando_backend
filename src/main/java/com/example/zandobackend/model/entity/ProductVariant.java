@@ -5,10 +5,11 @@ import java.util.List;
 
 @Data
 public class ProductVariant {
-    private Long variantId; // <-- ADD THIS LINE
+    private Long variantId;
     private Long productId;
     private String uuid;
     private String color;
-    private List<String> images; // image URLs
-    private List<String> sizes; // available sizes for this color
+    private int quantity; // ✅ ADDED
+    private List<String> images;
+    private List<String> sizes;
 }
