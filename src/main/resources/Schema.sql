@@ -53,6 +53,7 @@ CREATE TABLE product (
                          final_price NUMERIC(10, 2) GENERATED ALWAYS AS (base_price * (1 - discount_percent / 100.0)) STORED,
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE product ADD COLUMN views BIGINT DEFAULT 0;
 
 alter table product add column is_available BOOLEAN DEFAULT TRUE;
 drop table product cascade ;

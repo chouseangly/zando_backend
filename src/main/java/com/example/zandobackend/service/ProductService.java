@@ -25,4 +25,5 @@ public interface ProductService {
     ProductResponse deleteProduct(Long id);
 
     List<ProductResponse> getProductsByCategoryId(Integer categoryId);
+    void incrementProductView(Long productId);
 }

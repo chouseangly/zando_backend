@@ -90,6 +90,12 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
+    @PostMapping("/{id}/view")
+    public ResponseEntity<Void> trackProductView(@PathVariable Long id) {
+        productService.incrementProductView(id);
+        return ResponseEntity.ok().build();
+    }
+
     @PutMapping(value = "/admin/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(

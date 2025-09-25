@@ -49,12 +49,16 @@ public interface ProductRepo {
             @Result(property = "basePrice",       column = "base_price"),
             @Result(property = "discountPercent", column = "discount_percent"),
             @Result(property = "isAvailable",     column = "is_available"),
+            @Result(property = "views",           column = "views"), // ✅ ADD THIS MAPPING
             @Result(property = "variants",        column = "product_id",
                     many = @Many(select = "selectVariantsByProductId")),
             @Result(property = "categories",      column = "product_id",
                     many = @Many(select = "selectCategoriesByProductId"))
     })
     Product selectProductById(@Param("productId") Long productId);
+
+    @Update("UPDATE product SET views = views + 1 WHERE product_id = #{productId}")
+    void incrementViewCount(@Param("productId") Long productId);
 
     @Select("SELECT * FROM product")
     @ResultMap("ProductResultMap")
@@ -142,4 +146,13 @@ public interface ProductRepo {
             }}.toString();
         }
     }
+
+    // ✅ ADDED: Query to calculate total sales count for a product
+    @Select("SELECT COALESCE(SUM(quantity), 0) FROM transaction_items WHERE product_id = #{productId}")
+    Long selectTotalSalesForProduct(@Param("productId") Long productId);
+
+    // ✅ ADDED: Query to calculate total earnings for a product
+    @Select("SELECT COALESCE(SUM(price_at_purchase * quantity), 0) FROM transaction_items WHERE product_id = #{productId}")
+    Double selectTotalEarningsForProduct(@Param("productId") Long productId);
+
 }

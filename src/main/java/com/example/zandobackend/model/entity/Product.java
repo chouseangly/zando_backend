@@ -1,3 +1,4 @@
+// chouseangly/zando_backend/zando_backend-main/src/main/java/com/example/zandobackend/model/entity/Product.java
 package com.example.zandobackend.model.entity;
 
 import lombok.Data;
@@ -12,7 +13,8 @@ public class Product {
     private String description;
     private Double basePrice;
     private Integer discountPercent;
-    private Boolean isAvailable; // <-- ADD THIS LINE
+    private Boolean isAvailable;
+    private Long views; // ✅ ADD THIS FIELD
     private List<ProductVariant> variants = new ArrayList<>();
     private List<Category> categories = new ArrayList<>();
 }

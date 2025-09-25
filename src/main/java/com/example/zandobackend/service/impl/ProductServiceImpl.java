@@ -160,6 +160,12 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void incrementProductView(Long productId) {
+        productRepo.incrementViewCount(productId);
+    }
+
 
     @Override
     public ProductResponse getProductResponse(Long id) {
@@ -252,6 +258,10 @@ public class ProductServiceImpl implements ProductService {
                 .map(this::mapToCategoryDto)
                 .collect(Collectors.toList());
 
+        Long totalSales = productRepo.selectTotalSalesForProduct(product.getProductId());
+        Double totalEarnings = productRepo.selectTotalEarningsForProduct(product.getProductId());
+        Long totalViews = product.getViews();
+
         return ProductResponse.builder()
                 .id(product.getProductId())
                 .name(product.getName())
@@ -269,6 +279,9 @@ public class ProductServiceImpl implements ProductService {
                         .toList())
                 .description(product.getDescription())
                 .categories(categoryDtos)
+                .sell(totalSales)
+                .earning(totalEarnings)
+                .view(totalViews)
                 .build();
     }
 

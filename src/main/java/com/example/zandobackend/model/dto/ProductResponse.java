@@ -1,3 +1,5 @@
+// chouseangly/zando_backend/zando_backend-main/src/main/java/com/example/zandobackend/model/dto/ProductResponse.java
+
 package com.example.zandobackend.model.dto;
 
 import lombok.AllArgsConstructor;
@@ -21,12 +23,17 @@ public class ProductResponse {
     private String description;
     private List<CategoryDto> categories;
 
+    // ✅ ADDED: Fields for dynamic stats from the backend
+    private Long sell;
+    private Long view;
+    private Double earning;
+
     @Data
     @Builder
     public static class GalleryResponse {
         private String color;
-        private int quantity; // ✅ ADDED
+        private int quantity;
         private List<String> images;
-        private List<String> sizes; // ✅ REVERTED to List<String>
+        private List<String> sizes;
     }
 }
