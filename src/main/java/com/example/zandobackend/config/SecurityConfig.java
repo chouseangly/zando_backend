@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE,"/api/v1/products/admin/**").hasRole("ADMIN")
                         // ✅ ADDED: Secure favorites endpoints
                         .requestMatchers("/api/v1/favorites/**").authenticated()
+                        .requestMatchers("/api/v1/notifications/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

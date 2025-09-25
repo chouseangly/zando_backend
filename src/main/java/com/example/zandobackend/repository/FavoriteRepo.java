@@ -28,4 +28,16 @@ public interface FavoriteRepo {
 
     @Select("SELECT COUNT(*) FROM favorite WHERE user_id = #{userId} AND product_id = #{productId}")
     int isFavorite(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    // ✅ ADDED: New method to find a single favorite after it's created
+    @Select("SELECT * FROM favorite WHERE user_id = #{userId} AND product_id = #{productId}")
+    @Results({
+            @Result(property = "favoriteId", column = "favorite_id"),
+            @Result(property = "userId", column = "user_id"),
+            @Result(property = "productId", column = "product_id"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "product", column = "product_id",
+                    one = @One(select = "com.example.zandobackend.repository.ProductRepo.selectProductById"))
+    })
+    Favorite findFavoriteByUserAndProduct(@Param("userId") Long userId, @Param("productId") Long productId);
 }

@@ -23,11 +23,16 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final ModelMapper modelMapper;
 
     @Override
-    public void addFavorite(FavoriteRequest favoriteRequest) {
+    public FavoriteResponse addFavorite(FavoriteRequest favoriteRequest) {
         if (isFavorite(favoriteRequest.getUserId(), favoriteRequest.getProductId())) {
             throw new RuntimeException("Product is already in favorites.");
         }
+        // Insert into the database
         favoriteRepo.addFavorite(favoriteRequest);
+
+        // ✅ MODIFIED: Fetch the newly created favorite record and return it
+        Favorite newFavourite = favoriteRepo.findFavoriteByUserAndProduct(favoriteRequest.getUserId(), favoriteRequest.getProductId());
+        return mapToFavoriteResponse(newFavourite);
     }
 
     @Override

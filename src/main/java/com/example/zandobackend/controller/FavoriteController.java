@@ -22,18 +22,19 @@ public class FavoriteController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<String>> addFavorite(@RequestBody FavoriteRequest favoriteRequest) {
+    public ResponseEntity<ApiResponse<FavoriteResponse>> addFavorite(@RequestBody FavoriteRequest favoriteRequest) {
         try {
-            favoriteService.addFavorite(favoriteRequest);
-            ApiResponse<String> response = new ApiResponse<>(
+            // ✅ MODIFIED: The service now returns the created favorite object
+            FavoriteResponse newFavorite = favoriteService.addFavorite(favoriteRequest);
+            ApiResponse<FavoriteResponse> response = new ApiResponse<>(
                     "Product added to favorites successfully.",
-                    null,
+                    newFavorite, // Set the returned object as the payload
                     HttpStatus.CREATED.value(),
                     LocalDateTime.now()
             );
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            ApiResponse<String> response = new ApiResponse<>(
+            ApiResponse<FavoriteResponse> response = new ApiResponse<>(
                     e.getMessage(),
                     null,
                     HttpStatus.BAD_REQUEST.value(),

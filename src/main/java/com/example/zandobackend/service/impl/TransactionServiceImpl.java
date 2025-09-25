@@ -1,15 +1,14 @@
 package com.example.zandobackend.service.impl;
 
 import com.example.zandobackend.model.dto.TransactionRequest;
-import com.example.zandobackend.model.entity.Auth;
-import com.example.zandobackend.model.entity.Product;
-import com.example.zandobackend.model.entity.Transaction;
-import com.example.zandobackend.model.entity.TransactionItem;
+import com.example.zandobackend.model.entity.*;
 import com.example.zandobackend.repository.AuthRepo;
 import com.example.zandobackend.repository.ProductRepo;
 import com.example.zandobackend.repository.TransactionRepo;
+import com.example.zandobackend.service.NotificationService;
 import com.example.zandobackend.service.ProductService; // ✅ Import ProductService
 import com.example.zandobackend.service.TransactionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,24 +16,14 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepo transactionRepo;
     private final ProductRepo productRepo;
     private final AuthRepo authRepo;
-    private final ProductService productService; // ✅ Add ProductService
-
-    public TransactionServiceImpl(
-            TransactionRepo transactionRepo,
-            ProductRepo productRepo,
-            AuthRepo authRepo,
-            ProductService productService // ✅ Inject ProductService
-    ) {
-        this.transactionRepo = transactionRepo;
-        this.productRepo = productRepo;
-        this.authRepo = authRepo;
-        this.productService = productService; // ✅ Initialize it
-    }
+    private final ProductService productService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -65,6 +54,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setTotalAmount(totalAmount);
         transactionRepo.insertTransaction(transaction);
 
+
         for (var itemRequest : request.getItems()) {
             Product product = productRepo.selectProductById(itemRequest.getProductId());
             TransactionItem item = new TransactionItem();
@@ -74,6 +64,15 @@ public class TransactionServiceImpl implements TransactionService {
             item.setPriceAtPurchase(BigDecimal.valueOf(product.getBasePrice()));
             transactionRepo.insertTransactionItem(item);
         }
+
+        Notification notification = Notification.builder()
+                .userId(user.getUserId())
+                .title("New Order Placed")
+                .content("Your order #" + transaction.getId() + " has been successfully placed.")
+                .iconUrl("https://gateway.pinata.cloud/ipfs/your-order-icon-hash") // Placeholder icon
+                .build();
+        notificationService.createNotificationWithType(notification);
+
 
         return transactionRepo.findById(transaction.getId());
     }
