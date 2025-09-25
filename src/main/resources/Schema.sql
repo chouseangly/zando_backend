@@ -264,7 +264,7 @@ CREATE TABLE cart_item (
                            CONSTRAINT fk_variant_cart FOREIGN KEY(variant_id) REFERENCES product_variant(variant_id) ON DELETE CASCADE,
                            CONSTRAINT fk_size_cart FOREIGN KEY(size_id) REFERENCES size(size_id) ON DELETE CASCADE
 );
-drop table notifications cascade  ;
+truncate notifications restart identity cascade ;
 
 -- This script assumes the category table is empty and the IDs will be generated sequentially starting from 1.
 -- This script clears and populates the category table based on the menu structure in the provided images.

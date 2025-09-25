@@ -4,10 +4,12 @@ import com.example.zandobackend.jwt.JwtService;
 import com.example.zandobackend.model.dto.AuthResponse;
 import com.example.zandobackend.model.dto.GoogleUserDto;
 import com.example.zandobackend.model.entity.Auth;
+import com.example.zandobackend.model.entity.Notification;
 import com.example.zandobackend.model.entity.UserProfile;
 import com.example.zandobackend.repository.AuthRepo;
 import com.example.zandobackend.repository.UserProfileRepo;
 import com.example.zandobackend.service.AuthService;
+import com.example.zandobackend.service.NotificationService; // ✅ Import NotificationService
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,6 +29,18 @@ public class AuthServiceImpl implements AuthService {
     private final UserProfileRepo userProfileRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final NotificationService notificationService; // ✅ Inject NotificationService
+
+    // ✅ Private helper method to create a welcome notification
+    private void sendWelcomeNotification(Auth user) {
+        Notification notification = Notification.builder()
+                .userId(user.getUserId())
+                .title("Welcome to Zando")
+                .content("We’re excited to have you join our community. Explore great deals and connect with others!")
+                .iconUrl("https://gateway.pinata.cloud/ipfs/QmdMXVZ9KCiNGMwFHxkPMfpUfeGL8QQpMoENKeR5NKJ51F")
+                .build();
+        notificationService.createNotificationWithType(notification);
+    }
 
     @Override
     public Auth findByEmail(String email) {
@@ -45,6 +59,9 @@ public class AuthServiceImpl implements AuthService {
                 .lastName(savedUser.getLastName())
                 .build();
         userProfileRepo.createUserProfileAfterVerify(userProfile);
+
+        // ✅ Send welcome notification for new email registrations
+        sendWelcomeNotification(savedUser);
     }
 
     @Override
@@ -74,6 +91,8 @@ public class AuthServiceImpl implements AuthService {
         Optional<Auth> existing = authRepo.findByEmailOptional(googleUserDto.getEmail());
 
         Auth auth;
+        boolean isNewUser = false; // Flag to track if the user is new
+
         if (existing.isPresent()) {
             auth = existing.get();
             UserProfile existingProfile = userProfileRepo.getProfileByUserId(auth.getUserId());
@@ -86,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
                 userProfileRepo.createUserProfileAfterVerify(profile);
             }
         } else {
+            isNewUser = true; // Mark as new user
             auth = new Auth();
             auth.setFirstName(googleUserDto.getFirstName());
             auth.setLastName(googleUserDto.getLastName());
@@ -106,6 +126,9 @@ public class AuthServiceImpl implements AuthService {
             profile.setProfileImage(googleUserDto.getPicture());
 
             userProfileRepo.createUserProfileAfterVerify(profile);
+
+            // ✅ Send welcome notification ONLY for new Google sign-ups
+            sendWelcomeNotification(auth);
         }
 
         String token = jwtService.generateToken(auth);

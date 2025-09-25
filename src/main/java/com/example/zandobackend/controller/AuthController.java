@@ -9,7 +9,6 @@ import com.example.zandobackend.service.AuthService;
 import com.example.zandobackend.service.NotificationService;
 import com.example.zandobackend.service.OtpService;
 import com.example.zandobackend.service.UserProfileService;
-import com.example.zandobackend.service.impl.AuthServiceImpl;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -33,9 +32,8 @@ public class AuthController {
     private final OtpService otpService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final AuthServiceImpl authServiceImpl;
     private final UserProfileService userProfileService;
-    private final NotificationService notificationService;
+    private final NotificationService notificationService; // ✅ Injected NotificationService
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AuthRequest authRequest) {
@@ -61,8 +59,7 @@ public class AuthController {
             authService.enableUser(otpRequest.getEmail());
 
             Auth auth = authService.findByEmail(otpRequest.getEmail());
-
-            Long userId = auth.getUserId().longValue();
+            Long userId = auth.getUserId();
 
             if (!userProfileService.existsByUserId(userId)) {
                 UserProfile profile = UserProfile.builder()
@@ -71,16 +68,13 @@ public class AuthController {
                         .lastName(auth.getLastName())
                         .userName(auth.getUserName())
                         .build();
-
                 userProfileService.createUserProfileAfterVerify(profile);
             }
-
             return ResponseEntity.ok("OTP verified. User activated.");
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid OTP");
         }
     }
-
 
     @GetMapping("/finduserbyemail")
     public ResponseEntity<Auth> findUserByEmail(@RequestParam String email) {
@@ -94,6 +88,7 @@ public class AuthController {
         otpService.sendOtp(otpRequest.getEmail());
         return ResponseEntity.ok(Map.of("message", "OTP resent successfully."));
     }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest login, HttpServletResponse response) {
         Auth auth = authService.findByEmail(login.getEmail());
@@ -107,6 +102,16 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Account not verified"));
         }
+
+        // ✅ Create and send login notification
+        Notification notification = Notification.builder()
+                .userId(auth.getUserId())
+                .title("Successful Login")
+                .content("Your account was just accessed. If this wasn't you, please secure your account.")
+                .iconUrl("https://gateway.pinata.cloud/ipfs/QmdMXVZ9KCiNGMwFHxkPMfpUfeGL8QQpMoENKeR5NKJ51F") // Placeholder icon
+                .build();
+        notificationService.createNotificationWithType(notification);
+
         String token = jwtService.generateToken(auth);
         Cookie cookie = new Cookie("token", token);
         cookie.setHttpOnly(true);
@@ -115,9 +120,8 @@ public class AuthController {
         cookie.setMaxAge((int) TimeUnit.HOURS.toSeconds(5));
         response.addCookie(cookie);
 
-        // ✅ **THE FIX IS HERE: Add the token to the JSON response body**
         return ResponseEntity.ok(Map.of(
-                "token", token, // Include the token in the response
+                "token", token,
                 "role", auth.getRole(),
                 "userId", auth.getUserId(),
                 "firstName", auth.getFirstName(),
@@ -127,6 +131,7 @@ public class AuthController {
                 "message", "Login successful"
         ));
     }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("token", null);
@@ -175,7 +180,6 @@ public class AuthController {
         }
 
         String encodedPassword = passwordEncoder.encode(resetRequest.getNewPassword());
-
         Auth updated = authService.resetPassword(resetRequest.getEmail(), encodedPassword);
 
         return ResponseEntity.ok(
@@ -193,20 +197,13 @@ public class AuthController {
         AuthResponse authResponse = authService.registerWithGoogle(googleUserDto);
         Map<String, Object> response = new HashMap<>();
         response.put("payload", authResponse);
-        Notification notification = Notification.builder()
-                .userId(authResponse.getUserId())
-                .title("Welcome to ResellKH")
-                .content("Welcome to ResellKH! We’re excited to have you join our community. As a new member, you can explore great deals, post your products, and connect with trusted buyers and sellers. Stay updated with the latest promotions, features, and security tips. Thank you for choosing ResellKH — let’s grow together!")
-                .iconUrl("https://gateway.pinata.cloud/ipfs/QmdMXVZ9KCiNGMwFHxkPMfpUfeGL8QQpMoENKeR5NKJ51F")
-                .build();
-        notificationService.createNotificationWithType(notification);
         return ResponseEntity.ok(response);
     }
 
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Auth>>> getAllUser() {
-        List<Auth> users = authServiceImpl.getAllUser();
+        List<Auth> users = authService.getAllUser();
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(
                 "Get all users successfully",
                 users,
@@ -214,6 +211,4 @@ public class AuthController {
                 LocalDateTime.now()
         ));
     }
-
-
 }
