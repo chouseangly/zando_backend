@@ -143,6 +143,10 @@ public class ProductServiceImpl implements ProductService {
             throw new RuntimeException("Product not found with id: " + id);
         }
 
+        // ✅ FIXED: Explicitly delete related data before deleting the product
+        productRepo.deleteProductCategoriesByProductId(id);
+        productRepo.deleteVariantsByProductId(id);
+
         productRepo.deleteProductById(id);
         return productToDelete;
     }

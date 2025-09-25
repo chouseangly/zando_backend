@@ -445,6 +445,7 @@ INSERT INTO category (name, parent_id) VALUES
 -- Truncate all except users and category
 TRUNCATE TABLE
     otp_number,
+    size,
     product,
     product_variant,
     product_image,
