@@ -104,4 +104,15 @@ public class TransactionServiceImpl implements TransactionService {
         }
         return transactions;
     }
+
+    @Override
+    @Transactional
+    public Transaction updateTransactionStatus(Long id, String status) {
+        Transaction transaction = transactionRepo.findById(id);
+        if (transaction == null) {
+            throw new RuntimeException("Transaction not found with id: " + id);
+        }
+        transactionRepo.updateStatus(id, status);
+        return transactionRepo.findById(id);
+    }
 }

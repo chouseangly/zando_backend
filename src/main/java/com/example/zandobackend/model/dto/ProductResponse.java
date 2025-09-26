@@ -2,6 +2,7 @@
 
 package com.example.zandobackend.model.dto;
 
+import com.example.zandobackend.model.entity.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,7 +24,6 @@ public class ProductResponse {
     private String description;
     private List<CategoryDto> categories;
 
-    // ✅ ADDED: Fields for dynamic stats from the backend
     private Long sell;
     private Long view;
     private Double earning;
@@ -31,9 +31,10 @@ public class ProductResponse {
     @Data
     @Builder
     public static class GalleryResponse {
+        private Long variantId; // ✅ ADD THIS LINE
         private String color;
         private int quantity;
         private List<String> images;
-        private List<String> sizes;
+        private List<Size> sizes;
     }
 }

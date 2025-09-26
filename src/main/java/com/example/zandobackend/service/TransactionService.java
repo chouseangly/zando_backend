@@ -7,4 +7,5 @@ import java.util.List;
 public interface TransactionService {
     Transaction createTransaction(TransactionRequest transactionRequest);
     List<Transaction> findAllTransactions();
+    Transaction updateTransactionStatus(Long id, String status);
 }

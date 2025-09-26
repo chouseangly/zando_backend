@@ -271,6 +271,7 @@ public class ProductServiceImpl implements ProductService {
                 .isAvailable(product.getIsAvailable())
                 .gallery(product.getVariants().stream()
                         .map(v -> ProductResponse.GalleryResponse.builder()
+                                .variantId(v.getVariantId())
                                 .color(v.getColor())
                                 .quantity(v.getQuantity())
                                 .images(v.getImages())

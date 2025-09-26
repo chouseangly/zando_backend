@@ -35,6 +35,9 @@ public interface TransactionRepo {
     })
     List<TransactionItem> findItemsByTransactionId(Long transactionId);
 
+    @Update("UPDATE transactions SET status = #{status} WHERE id = #{id}")
+    void updateStatus(@Param("id") Long id, @Param("status") String status);
+
     @Select("SELECT * FROM transactions WHERE id = #{id}")
     @Results(id = "transactionResultMap", value = {
             @Result(property = "id", column = "id"),
@@ -50,4 +53,7 @@ public interface TransactionRepo {
                     many = @Many(select = "findItemsByTransactionId"))
     })
     Transaction findById(Long id);
+
+
+
 }

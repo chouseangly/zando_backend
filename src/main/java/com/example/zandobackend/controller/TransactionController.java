@@ -39,4 +39,19 @@ public class TransactionController {
         ApiResponse<List<Transaction>> response = new ApiResponse<>("Transactions retrieved successfully", transactions, HttpStatus.OK.value(), LocalDateTime.now());
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Transaction>> updateTransactionStatus(
+            @PathVariable Long id,
+            @RequestBody String status
+    ) {
+        try {
+            Transaction updatedTransaction = transactionService.updateTransactionStatus(id, status);
+            ApiResponse<Transaction> response = new ApiResponse<>("Transaction status updated successfully", updatedTransaction, HttpStatus.OK.value(), LocalDateTime.now());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            ApiResponse<Transaction> response = new ApiResponse<>(e.getMessage(), null, HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
 }

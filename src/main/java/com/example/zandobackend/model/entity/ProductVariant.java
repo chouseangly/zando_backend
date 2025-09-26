@@ -9,7 +9,7 @@ public class ProductVariant {
     private Long productId;
     private String uuid;
     private String color;
-    private int quantity; // ✅ ADDED
+    private int quantity;
     private List<String> images;
-    private List<String> sizes;
+    private List<Size> sizes; // Changed from List<String>
 }

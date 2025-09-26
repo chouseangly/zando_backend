@@ -4,6 +4,7 @@ import com.example.zandobackend.model.dto.VariantInsertDTO;
 import com.example.zandobackend.model.entity.Category;
 import com.example.zandobackend.model.entity.Product;
 import com.example.zandobackend.model.entity.ProductVariant;
+import com.example.zandobackend.model.entity.Size;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -100,10 +101,12 @@ public interface ProductRepo {
     @Insert("INSERT INTO variant_size(variant_id, size_id, is_available) VALUES(#{variantId}, #{sizeId}, TRUE)")
     void insertVariantSize(@Param("variantId") Long variantId, @Param("sizeId") Long sizeId);
 
-    @Select("SELECT s.name FROM size s " +
+    // ... other methods
+    @Select("SELECT s.size_id, s.name FROM size s " +
             "JOIN variant_size vs ON s.size_id = vs.size_id " +
             "WHERE vs.variant_id = #{variantId} AND vs.is_available = TRUE")
-    List<String> selectSizesByVariantId(@Param("variantId") Long variantId);
+    List<Size> selectSizesByVariantId(@Param("variantId") Long variantId);
+// ...
 
     @Insert("INSERT INTO product_image(variant_id, image_url) VALUES(#{variantId}, #{imageUrl})")
     void insertImage(@Param("variantId") Long variantId, @Param("imageUrl") String imageUrl);
