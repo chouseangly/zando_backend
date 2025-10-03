@@ -166,6 +166,15 @@ public class ProductServiceImpl implements ProductService {
         productRepo.incrementViewCount(productId);
     }
 
+    @Override
+    public List<ProductResponse> searchProductsByName(String name) {
+        List<Product> products = productRepo.searchProductsByName(name);
+        return products.stream()
+                .map(product -> getProductResponse(product.getProductId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public ProductResponse getProductResponse(Long id) {

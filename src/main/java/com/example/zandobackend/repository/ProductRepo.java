@@ -158,4 +158,8 @@ public interface ProductRepo {
     @Select("SELECT COALESCE(SUM(price_at_purchase * quantity), 0) FROM transaction_items WHERE product_id = #{productId}")
     Double selectTotalEarningsForProduct(@Param("productId") Long productId);
 
+    @Select("SELECT * FROM product WHERE name ILIKE '%' || #{name} || '%'")
+    @ResultMap("ProductResultMap")
+    List<Product> searchProductsByName(@Param("name") String name);
+
 }

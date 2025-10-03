@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/cart/**").authenticated()
                         .requestMatchers("/api/v1/notifications/**").authenticated()
                         .anyRequest().authenticated()
+
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

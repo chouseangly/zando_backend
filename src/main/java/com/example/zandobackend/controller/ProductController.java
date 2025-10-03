@@ -79,8 +79,13 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
-        List<ProductResponse> responses = productService.getAllProducts();
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(@RequestParam(required = false) String name) {
+        List<ProductResponse> responses;
+        if (name != null && !name.isEmpty()) {
+            responses = productService.searchProductsByName(name);
+        } else {
+            responses = productService.getAllProducts();
+        }
         ApiResponse<List<ProductResponse>> apiResponse = new ApiResponse<>(
                 "Products retrieved successfully",
                 responses,
@@ -89,6 +94,7 @@ public class ProductController {
         );
         return ResponseEntity.ok(apiResponse);
     }
+
 
     @PostMapping("/{id}/view")
     public ResponseEntity<Void> trackProductView(@PathVariable Long id) {

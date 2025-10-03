@@ -26,4 +26,6 @@ public interface ProductService {
 
     List<ProductResponse> getProductsByCategoryId(Integer categoryId);
     void incrementProductView(Long productId);
+
+    List<ProductResponse> searchProductsByName(String name);
 }
