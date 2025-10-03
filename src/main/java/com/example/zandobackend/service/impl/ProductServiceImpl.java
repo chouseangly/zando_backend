@@ -8,6 +8,7 @@ import com.example.zandobackend.model.entity.Category;
 import com.example.zandobackend.model.entity.Notification;
 import com.example.zandobackend.model.entity.Product;
 import com.example.zandobackend.model.entity.ProductVariant;
+import com.example.zandobackend.repository.CategoryRepo;
 import com.example.zandobackend.repository.ProductRepo;
 import com.example.zandobackend.service.FavoriteService;
 import com.example.zandobackend.service.NotificationService;
@@ -28,10 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +39,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepo productRepo;
     private final NotificationService notificationService;
     private final FavoriteService favoriteService;
+    private final CategoryRepo categoryRepo;
 
     @Value("${pinata.api.key}")
     private String pinataApiKey;
@@ -167,10 +166,15 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponse> searchProductsByName(String name) {
-        List<Product> products = productRepo.searchProductsByName(name);
+    public List<ProductResponse> searchProductsByName(String name, Integer categoryId) {
+        List<Product> products;
+        if (categoryId != null) {
+            products = productRepo.searchProductsByNameAndCategory(name, categoryId);
+        } else {
+            products = productRepo.searchProductsByName(name);
+        }
         return products.stream()
-                .map(product -> getProductResponse(product.getProductId()))
+                .map(this::mapToProductResponse)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -263,9 +267,23 @@ public class ProductServiceImpl implements ProductService {
             finalPrice -= product.getBasePrice() * product.getDiscountPercent() / 100.0;
         }
 
-        List<CategoryDto> categoryDtos = product.getCategories().stream()
-                .map(this::mapToCategoryDto)
+        Map<Integer, Category> fullCategoryMap = new HashMap<>();
+        if (product.getCategories() != null) {
+            for (Category directCategory : product.getCategories()) {
+                Category current = categoryRepo.findCategoryById(directCategory.getCategoryId());
+                while (current != null) {
+                    if (!fullCategoryMap.containsKey(current.getCategoryId())) {
+                        fullCategoryMap.put(current.getCategoryId(), current);
+                    }
+                    current = current.getParent();
+                }
+            }
+        }
+
+        List<CategoryDto> categoryDtos = fullCategoryMap.values().stream()
+                .map(this::mapToCategoryDtoForResponse)
                 .collect(Collectors.toList());
+
 
         Long totalSales = productRepo.selectTotalSalesForProduct(product.getProductId());
         Double totalEarnings = productRepo.selectTotalEarningsForProduct(product.getProductId());
@@ -295,22 +313,14 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
-    private CategoryDto mapToCategoryDto(Category category) {
+    private CategoryDto mapToCategoryDtoForResponse(Category category) {
         CategoryDto dto = new CategoryDto();
         dto.setId(category.getCategoryId());
         dto.setName(category.getName());
-
-        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
-            dto.setChildren(
-                    category.getChildren().stream()
-                            .map(this::mapToCategoryDto)
-                            .collect(Collectors.toSet())
-            );
-        } else {
-            dto.setChildren(Collections.emptySet());
-        }
+        dto.setChildren(Collections.emptySet());
         return dto;
     }
+
 
     private String uploadToPinata(MultipartFile file) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {

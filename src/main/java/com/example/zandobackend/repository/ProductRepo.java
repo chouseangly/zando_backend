@@ -114,7 +114,7 @@ public interface ProductRepo {
     @Select("SELECT image_url FROM product_image WHERE variant_id = #{variantId}")
     List<String> selectImagesByVariantId(@Param("variantId") Long variantId);
 
-    @Select("SELECT p.* FROM product p " +
+    @Select("SELECT DISTINCT p.* FROM product p " +
             "JOIN product_category pc ON p.product_id = pc.product_id " +
             "WHERE pc.category_id = #{categoryId}")
     @Results({
@@ -158,8 +158,14 @@ public interface ProductRepo {
     @Select("SELECT COALESCE(SUM(price_at_purchase * quantity), 0) FROM transaction_items WHERE product_id = #{productId}")
     Double selectTotalEarningsForProduct(@Param("productId") Long productId);
 
-    @Select("SELECT * FROM product WHERE name ILIKE '%' || #{name} || '%'")
+    @Select("SELECT DISTINCT p.* FROM product p WHERE name ILIKE '%' || #{name} || '%'")
     @ResultMap("ProductResultMap")
     List<Product> searchProductsByName(@Param("name") String name);
+
+    @Select("SELECT DISTINCT p.* FROM product p " +
+            "JOIN product_category pc ON p.product_id = pc.product_id " +
+            "WHERE p.name ILIKE '%' || #{name} || '%' AND pc.category_id IN (SELECT category_id FROM category WHERE parent_id = #{categoryId} OR category_id = #{categoryId})")
+    @ResultMap("ProductResultMap")
+    List<Product> searchProductsByNameAndCategory(@Param("name") String name, @Param("categoryId") Integer categoryId);
 
 }

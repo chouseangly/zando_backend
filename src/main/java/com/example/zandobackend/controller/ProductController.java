@@ -79,10 +79,13 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(@RequestParam(required = false) String name) {
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer categoryId
+    ) {
         List<ProductResponse> responses;
         if (name != null && !name.isEmpty()) {
-            responses = productService.searchProductsByName(name);
+            responses = productService.searchProductsByName(name, categoryId);
         } else {
             responses = productService.getAllProducts();
         }

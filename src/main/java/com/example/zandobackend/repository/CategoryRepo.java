@@ -35,4 +35,15 @@ public interface CategoryRepo {
             )
     })
     Set<Category> findByParentId(Integer parentId);
+
+    /**
+     * Finds a single category by its ID and recursively fetches its parent.
+     */
+    @Select("SELECT * FROM category WHERE category_id = #{id}")
+    @Results({
+            @Result(property = "categoryId", column = "category_id"),
+            @Result(property = "name", column = "name"),
+            @Result(property = "parent", column = "parent_id", one = @One(select = "findCategoryById"))
+    })
+    Category findCategoryById(Integer id);
 }
